@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefaultAudioDeviceSwitcher", "DefaultAudioDeviceSwitcher\DefaultAudioDeviceSwitcher.csproj", "{8FB437E7-8086-4DDC-A9B8-4678DB35E397}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8FB437E7-8086-4DDC-A9B8-4678DB35E397}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FB437E7-8086-4DDC-A9B8-4678DB35E397}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FB437E7-8086-4DDC-A9B8-4678DB35E397}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FB437E7-8086-4DDC-A9B8-4678DB35E397}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0AA02542-787B-4D68-943D-7D14D9444FB0}
+	EndGlobalSection
+EndGlobal
