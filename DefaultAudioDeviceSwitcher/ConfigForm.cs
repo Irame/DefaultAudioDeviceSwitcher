@@ -52,7 +52,7 @@ namespace DefaultAudioDeviceSwitcher
                      enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
             {
                 var name = endpoint.FriendlyName;
-                var braceIndex = name.IndexOf(" (");
+                var braceIndex = name.LastIndexOf(" (");
 
                 name = name.Substring(0, braceIndex);
 

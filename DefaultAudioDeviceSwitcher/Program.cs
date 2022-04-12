@@ -31,23 +31,32 @@ namespace DefaultAudioDeviceSwitcher
             set {
                 if (_activeDevice == value)
                     return;
-                
-                _activeDevice = value;
+
+                while (!File.Exists(_settings.NirCmdPath))
+                    if (!ConfigError("NirCmd not found!")) return;
 
                 if (_activeDevice == DeviceKind.Headset)
                 {
+                    while (string.IsNullOrWhiteSpace(_settings.HeadsetName))
+                        if (!ConfigError("No headset configured!")) return;
+
                     Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.HeadsetName}\"");
                     if (_settings.ChangeCommunicationDevice)
                         Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.HeadsetName}\" 2");
-                    _trayIcon.Icon = new Icon("Icons/Headset.ico");
+                    _trayIcon.Icon = Properties.Resources.Headset;
                 }
                 else
                 {
+                    while (string.IsNullOrWhiteSpace(_settings.HeadsetName))
+                        if (!ConfigError("No speaker configured!")) return;
+
                     Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.SpeakerName}\"");
                     if (_settings.ChangeCommunicationDevice)
                         Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.SpeakerName}\" 2");
-                    _trayIcon.Icon = new Icon("Icons/Speaker.ico");
+                    _trayIcon.Icon = Properties.Resources.Speaker;
                 }
+
+                _activeDevice = value;
             }
         }
 
@@ -55,7 +64,11 @@ namespace DefaultAudioDeviceSwitcher
         {
             ActiveDevice = DeviceKind.Headset;
 
-            _settings = new Settings("DefaultAudioDeviceSwitcher.json");
+            var appdataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+            var settingsPath = Path.Combine(appdataPath, "DefaultAudioDeviceSwitcher", "config.json");
+
+            _settings = new Settings(settingsPath);
 
             var contextMenuStrip = new ContextMenuStrip();
 
@@ -63,7 +76,7 @@ namespace DefaultAudioDeviceSwitcher
             contextMenuStrip.Items.Add("Exit", null, Exit);
 
             _trayIcon = new NotifyIcon();
-            _trayIcon.Icon = new Icon("Icons/Headset.ico");
+            _trayIcon.Icon = Properties.Resources.Headset;
             _trayIcon.Visible = true;
             _trayIcon.ContextMenuStrip = contextMenuStrip;
             _trayIcon.MouseClick += (s, e) =>
@@ -76,6 +89,19 @@ namespace DefaultAudioDeviceSwitcher
                         ActiveDevice = DeviceKind.Headset;
                 }
             };
+        }
+
+        bool ConfigError(string message)
+        {
+            var msgResult = MessageBox.Show(message + "\n\nWould you like to configure it?", "DefaultAudioDeviceSwitcher", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+
+            if (msgResult == DialogResult.Yes)
+            {
+                new ConfigForm(_settings).ShowDialog();
+                return true;
+            }
+            
+            return false;
         }
 
         void Exit(object? sender, EventArgs e)

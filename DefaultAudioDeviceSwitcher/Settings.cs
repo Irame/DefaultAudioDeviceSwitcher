@@ -28,6 +28,11 @@ namespace DefaultAudioDeviceSwitcher
 
         public void Save()
         {
+            var dirName = Path.GetDirectoryName(_filePath);
+
+            if (dirName != null)
+                Directory.CreateDirectory(dirName);
+
             File.WriteAllText(_filePath, Newtonsoft.Json.JsonConvert.SerializeObject(this));
         }
     }
