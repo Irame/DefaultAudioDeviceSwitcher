@@ -33,9 +33,6 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.communicationCheck = new System.Windows.Forms.CheckBox();
-            this.nirCmdEdit = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.browseNirCmdBtn = new System.Windows.Forms.Button();
             this.headsetCombo = new System.Windows.Forms.ComboBox();
             this.speakerCombo = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
@@ -43,7 +40,7 @@
             // cancelBtn
             // 
             this.cancelBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cancelBtn.Location = new System.Drawing.Point(210, 140);
+            this.cancelBtn.Location = new System.Drawing.Point(296, 100);
             this.cancelBtn.Name = "cancelBtn";
             this.cancelBtn.Size = new System.Drawing.Size(75, 23);
             this.cancelBtn.TabIndex = 0;
@@ -54,7 +51,7 @@
             // saveBtn
             // 
             this.saveBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.saveBtn.Location = new System.Drawing.Point(129, 140);
+            this.saveBtn.Location = new System.Drawing.Point(215, 100);
             this.saveBtn.Name = "saveBtn";
             this.saveBtn.Size = new System.Drawing.Size(75, 23);
             this.saveBtn.TabIndex = 1;
@@ -90,58 +87,33 @@
             this.communicationCheck.Text = "also change default communication device";
             this.communicationCheck.UseVisualStyleBackColor = true;
             // 
-            // nirCmdEdit
-            // 
-            this.nirCmdEdit.Location = new System.Drawing.Point(81, 111);
-            this.nirCmdEdit.Name = "nirCmdEdit";
-            this.nirCmdEdit.Size = new System.Drawing.Size(174, 23);
-            this.nirCmdEdit.TabIndex = 7;
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(10, 114);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(50, 15);
-            this.label3.TabIndex = 8;
-            this.label3.Text = "NirCMD";
-            // 
-            // browseNirCmdBtn
-            // 
-            this.browseNirCmdBtn.Image = global::DefaultAudioDeviceSwitcher.Properties.Resources.Explorer;
-            this.browseNirCmdBtn.Location = new System.Drawing.Point(261, 111);
-            this.browseNirCmdBtn.Name = "browseNirCmdBtn";
-            this.browseNirCmdBtn.Size = new System.Drawing.Size(24, 23);
-            this.browseNirCmdBtn.TabIndex = 9;
-            this.browseNirCmdBtn.UseVisualStyleBackColor = true;
-            this.browseNirCmdBtn.Click += new System.EventHandler(this.browseNirCmdBtn_Click);
-            // 
             // headsetCombo
             // 
+            this.headsetCombo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.headsetCombo.FormattingEnabled = true;
             this.headsetCombo.Location = new System.Drawing.Point(81, 12);
             this.headsetCombo.Name = "headsetCombo";
-            this.headsetCombo.Size = new System.Drawing.Size(204, 23);
+            this.headsetCombo.Size = new System.Drawing.Size(290, 23);
             this.headsetCombo.TabIndex = 10;
             // 
             // speakerCombo
             // 
+            this.speakerCombo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.speakerCombo.FormattingEnabled = true;
             this.speakerCombo.Location = new System.Drawing.Point(81, 41);
             this.speakerCombo.Name = "speakerCombo";
-            this.speakerCombo.Size = new System.Drawing.Size(204, 23);
+            this.speakerCombo.Size = new System.Drawing.Size(290, 23);
             this.speakerCombo.TabIndex = 11;
             // 
             // ConfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(297, 175);
+            this.ClientSize = new System.Drawing.Size(383, 135);
             this.Controls.Add(this.speakerCombo);
             this.Controls.Add(this.headsetCombo);
-            this.Controls.Add(this.browseNirCmdBtn);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.nirCmdEdit);
             this.Controls.Add(this.communicationCheck);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -163,9 +135,6 @@
         private Label label1;
         private Label label2;
         private CheckBox communicationCheck;
-        private TextBox nirCmdEdit;
-        private Label label3;
-        private Button browseNirCmdBtn;
         private ComboBox headsetCombo;
         private ComboBox speakerCombo;
     }

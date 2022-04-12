@@ -61,21 +61,21 @@ namespace DefaultAudioDeviceSwitcher.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Bitmap Explorer {
+        internal static System.Drawing.Icon Headset {
             get {
-                object obj = ResourceManager.GetObject("Explorer", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
+                object obj = ResourceManager.GetObject("Headset", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
             }
         }
         
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon Headset {
+        internal static System.Drawing.Icon Questionmark {
             get {
-                object obj = ResourceManager.GetObject("Headset", resourceCulture);
+                object obj = ResourceManager.GetObject("Questionmark", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }

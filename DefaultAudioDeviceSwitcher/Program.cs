@@ -1,3 +1,6 @@
+using CoreAudioApi;
+using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
 using System.Diagnostics;
 
 namespace DefaultAudioDeviceSwitcher
@@ -21,49 +24,35 @@ namespace DefaultAudioDeviceSwitcher
 
     class MyApplicationContext : ApplicationContext
     {
+        private NotificationClient _notificationClient;
+
         private NotifyIcon _trayIcon;
 
         private Settings _settings;
 
-        private DeviceKind _activeDevice;
-        public DeviceKind ActiveDevice { 
+        private DeviceKind? _activeDevice;
+        public DeviceKind? ActiveDevice { 
             get => _activeDevice; 
             set {
-                if (_activeDevice == value)
-                    return;
-
-                while (!File.Exists(_settings.NirCmdPath))
-                    if (!ConfigError("NirCmd not found!")) return;
-
-                if (_activeDevice == DeviceKind.Headset)
-                {
-                    while (string.IsNullOrWhiteSpace(_settings.HeadsetName))
-                        if (!ConfigError("No headset configured!")) return;
-
-                    Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.HeadsetName}\"");
-                    if (_settings.ChangeCommunicationDevice)
-                        Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.HeadsetName}\" 2");
-                    _trayIcon.Icon = Properties.Resources.Headset;
-                }
-                else
-                {
-                    while (string.IsNullOrWhiteSpace(_settings.HeadsetName))
-                        if (!ConfigError("No speaker configured!")) return;
-
-                    Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.SpeakerName}\"");
-                    if (_settings.ChangeCommunicationDevice)
-                        Process.Start(_settings.NirCmdPath, $"setdefaultsounddevice \"{_settings.SpeakerName}\" 2");
-                    _trayIcon.Icon = Properties.Resources.Speaker;
-                }
-
                 _activeDevice = value;
+
+                switch (_activeDevice)
+                {
+                    case DeviceKind.Headset:
+                        _trayIcon.Icon = Properties.Resources.Headset;
+                        break;
+                    case DeviceKind.Speaker:
+                        _trayIcon.Icon = Properties.Resources.Speaker;
+                        break;
+                    default:
+                        _trayIcon.Icon = Properties.Resources.Questionmark;
+                        break;
+                }
             }
         }
 
         public MyApplicationContext()
         {
-            ActiveDevice = DeviceKind.Headset;
-
             var appdataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
             var settingsPath = Path.Combine(appdataPath, "DefaultAudioDeviceSwitcher", "config.json");
@@ -76,19 +65,33 @@ namespace DefaultAudioDeviceSwitcher
             contextMenuStrip.Items.Add("Exit", null, Exit);
 
             _trayIcon = new NotifyIcon();
-            _trayIcon.Icon = Properties.Resources.Headset;
             _trayIcon.Visible = true;
             _trayIcon.ContextMenuStrip = contextMenuStrip;
             _trayIcon.MouseClick += (s, e) =>
             {
                 if (e.Button == MouseButtons.Left)
                 {
-                    if (ActiveDevice == DeviceKind.Headset)
-                        ActiveDevice = DeviceKind.Speaker;
+                    if (_activeDevice == DeviceKind.Speaker)
+                    {
+                        while (string.IsNullOrWhiteSpace(_settings.HeadsetId))
+                            if (!ConfigError("No headset configured!")) return;
+
+                        SetDefaultDevice(_settings.HeadsetId);
+                    }
                     else
-                        ActiveDevice = DeviceKind.Headset;
+                    {
+                        while (string.IsNullOrWhiteSpace(_settings.SpeakerId))
+                            if (!ConfigError("No speaker configured!")) return;
+
+                        SetDefaultDevice(_settings.SpeakerId);
+                    }
                 }
             };
+
+            _notificationClient = new NotificationClient();
+            _notificationClient.DefaultDeviceChanged += DefaultDeviceChanged;
+
+            SetActiveDevice(GetDefaultDeviceId());
         }
 
         bool ConfigError(string message)
@@ -117,5 +120,67 @@ namespace DefaultAudioDeviceSwitcher
 
             configForm.ShowDialog();
         }
+
+        void DefaultDeviceChanged(object? sender, DefaultDeviceChangedArgs e)
+        {
+            if (e.Flow == DataFlow.Render)
+            {
+                if (e.Role == Role.Console || e.Role == Role.Multimedia)
+                {
+                    SetActiveDevice(e.DefaultDeviceId);
+                }
+            }
+        }
+
+        void SetActiveDevice(string defaultDevice)
+        {
+            if (defaultDevice == _settings.HeadsetId)
+                ActiveDevice = DeviceKind.Headset;
+            else if (defaultDevice == _settings.SpeakerId)
+                ActiveDevice = DeviceKind.Speaker;
+            else
+                ActiveDevice = null;
+        }
+
+        string GetDefaultDeviceId()
+        {
+            return new MMDeviceEnumerator().GetDefaultAudioEndpoint(DataFlow.Render, Role.Console).ID;
+        }
+
+        void SetDefaultDevice(string id)
+        {
+            var policyConfigClient = new PolicyConfigClient();
+
+            policyConfigClient.SetDefaultEndpoint(id, ERole.eConsole);
+            policyConfigClient.SetDefaultEndpoint(id, ERole.eMultimedia);
+
+            if (_settings.ChangeCommunicationDevice)
+                policyConfigClient.SetDefaultEndpoint(id, ERole.eCommunications);
+        }
+    }
+
+    public record DefaultDeviceChangedArgs(DataFlow Flow, Role Role, string DefaultDeviceId);
+
+    class NotificationClient : IMMNotificationClient
+    {
+        public event EventHandler<DefaultDeviceChangedArgs>? DefaultDeviceChanged;
+
+        public NotificationClient()
+        {
+            new MMDeviceEnumerator().RegisterEndpointNotificationCallback(this);
+        }
+
+        public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId)
+        {
+            DefaultDeviceChanged?.Invoke(this, new DefaultDeviceChangedArgs(flow, role, defaultDeviceId));
+        }
+
+        public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) { }
+
+        public void OnDeviceStateChanged(string deviceId, DeviceState newState) { }
+
+        public void OnDeviceAdded(string pwstrDeviceId) { }
+
+        public void OnDeviceRemoved(string deviceId) { }
     }
 }

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -11,10 +13,17 @@ namespace DefaultAudioDeviceSwitcher
     {
         private readonly string _filePath;
 
-        public string HeadsetName { get; set; } = "";
-        public string SpeakerName { get; set; } = "";
+        [DefaultValue("")]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
+        public string HeadsetId { get; set; } = "";
+
+        [DefaultValue("")]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
+        public string SpeakerId { get; set; } = "";
+
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public bool ChangeCommunicationDevice { get; set; } = false;
-        public string NirCmdPath { get; set; } = "nircmd.exe";
 
         public Settings(string filePath)
         {
