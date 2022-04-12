@@ -35,6 +35,11 @@ namespace DefaultAudioDeviceSwitcher
             _settings = settings;
 
             InitializeComponent();
+            
+            var screen = Screen.FromPoint(Cursor.Position);
+
+            Left = screen.WorkingArea.Width - Width - 20;
+            Top = screen.WorkingArea.Height - Height - 10;
         }
 
         private void cancelBtn_Click(object sender, EventArgs e)

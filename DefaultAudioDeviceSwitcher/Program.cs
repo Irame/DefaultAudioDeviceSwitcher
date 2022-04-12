@@ -30,6 +30,8 @@ namespace DefaultAudioDeviceSwitcher
 
         private Settings _settings;
 
+        private ConfigForm? _configForm;
+
         private DeviceKind? _activeDevice;
         public DeviceKind? ActiveDevice { 
             get => _activeDevice; 
@@ -116,9 +118,12 @@ namespace DefaultAudioDeviceSwitcher
 
         void OpenConfig(object? sender, EventArgs e)
         {
-            var configForm = new ConfigForm(_settings);
-
-            configForm.ShowDialog();
+            if (_configForm == null)
+            {
+                _configForm = new ConfigForm(_settings);
+                _configForm.ShowDialog();
+                _configForm = null;
+            }
         }
 
         void DefaultDeviceChanged(object? sender, DefaultDeviceChangedArgs e)
