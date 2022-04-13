@@ -35,11 +35,6 @@ namespace DefaultAudioDeviceSwitcher
             _settings = settings;
 
             InitializeComponent();
-            
-            var screen = Screen.FromPoint(Cursor.Position);
-
-            Left = screen.WorkingArea.Width - Width - 20;
-            Top = screen.WorkingArea.Height - Height - 10;
         }
 
         private void cancelBtn_Click(object sender, EventArgs e)
@@ -49,18 +44,45 @@ namespace DefaultAudioDeviceSwitcher
 
         private void saveBtn_Click(object sender, EventArgs e)
         {
-            _settings.HeadsetId = (string)headsetCombo.SelectedValue;
-            _settings.SpeakerId = (string)speakerCombo.SelectedValue;
-            _settings.ChangeCommunicationDevice = communicationCheck.Checked;
-
-            _settings.Save();
+            SaveSettings();
             Close();
         }
 
         private void ConfigForm_Load(object sender, EventArgs e)
         {
-            communicationCheck.Checked = _settings.ChangeCommunicationDevice;
+            CalcPosition();
+            FillCombos();
+            LoadSettings();
+        }
 
+        private void CalcPosition()
+        {
+            var cursorPos = Cursor.Position;
+            var screen = Screen.FromPoint(cursorPos);
+
+            var rect = new Rectangle(cursorPos.X, cursorPos.Y, Width, Height);
+            rect.Offset(-rect.Width / 2, -rect.Height / 2);
+
+            var wa = screen.WorkingArea;
+
+            if (rect.Left < wa.Left + 20)
+                rect.Offset(wa.Left - rect.Left + 20, 0);
+
+            if (rect.Top < wa.Top + 10)
+                rect.Offset(0, wa.Top - rect.Top + 10);
+
+            if (rect.Right > wa.Right - 20)
+                rect.Offset(wa.Right - rect.Right - 20, 0);
+
+            if (rect.Bottom > wa.Bottom - 10)
+                rect.Offset(0, wa.Bottom - rect.Bottom - 10);
+
+            Left = rect.Left;
+            Top = rect.Top;
+        }
+
+        private void FillCombos()
+        {
             var deviceList = new MMDeviceEnumerator().EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)
                 .Select(d => new DeviceListEntry(d.ID, d.FriendlyName))
                 .ToList();
@@ -72,9 +94,23 @@ namespace DefaultAudioDeviceSwitcher
             speakerCombo.ValueMember = nameof(DeviceListEntry.Id);
             speakerCombo.DisplayMember = nameof(DeviceListEntry.Name);
             speakerCombo.DataSource = deviceList.ToList();
+        }
+
+        private void LoadSettings()
+        {
+            communicationCheck.Checked = _settings.ChangeCommunicationDevice;
 
             headsetCombo.SelectedValue = _settings.HeadsetId;
             speakerCombo.SelectedValue = _settings.SpeakerId;
+        }
+
+        private void SaveSettings()
+        {
+            _settings.HeadsetId = (string)headsetCombo.SelectedValue;
+            _settings.SpeakerId = (string)speakerCombo.SelectedValue;
+            _settings.ChangeCommunicationDevice = communicationCheck.Checked;
+
+            _settings.Save();
         }
     }
 }
