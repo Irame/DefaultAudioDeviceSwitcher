@@ -120,6 +120,8 @@
             this.Controls.Add(this.saveBtn);
             this.Controls.Add(this.cancelBtn);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "ConfigForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Configuration";
