@@ -91,6 +91,7 @@
             // 
             this.headsetCombo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.headsetCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.headsetCombo.FormattingEnabled = true;
             this.headsetCombo.Location = new System.Drawing.Point(81, 12);
             this.headsetCombo.Name = "headsetCombo";
@@ -101,6 +102,7 @@
             // 
             this.speakerCombo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.speakerCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.speakerCombo.FormattingEnabled = true;
             this.speakerCombo.Location = new System.Drawing.Point(81, 41);
             this.speakerCombo.Name = "speakerCombo";
