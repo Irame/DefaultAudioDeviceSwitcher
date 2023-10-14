@@ -73,16 +73,20 @@ namespace DefaultAudioDeviceSwitcher
             {
                 if (e.Button == MouseButtons.Left)
                 {
+                    var availableDevices = new MMDeviceEnumerator().EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)
+                        .Select(x => x.ID)
+                        .ToHashSet();
+
                     if (_activeDevice == DeviceKind.Speaker)
                     {
-                        while (string.IsNullOrWhiteSpace(_settings.HeadsetId))
+                        while (string.IsNullOrWhiteSpace(_settings.HeadsetId) || !availableDevices.Contains(_settings.HeadsetId))
                             if (!ConfigError("No headset configured!")) return;
 
                         SetDefaultDevice(_settings.HeadsetId);
                     }
                     else
                     {
-                        while (string.IsNullOrWhiteSpace(_settings.SpeakerId))
+                        while (string.IsNullOrWhiteSpace(_settings.SpeakerId) || !availableDevices.Contains(_settings.SpeakerId))
                             if (!ConfigError("No speaker configured!")) return;
 
                         SetDefaultDevice(_settings.SpeakerId);
