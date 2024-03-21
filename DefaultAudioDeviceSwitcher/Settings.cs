@@ -25,6 +25,8 @@ namespace DefaultAudioDeviceSwitcher
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public bool ChangeCommunicationDevice { get; set; } = false;
 
+        public event EventHandler SettingsSaved;
+
         public Settings(string filePath)
         {
             _filePath = filePath;
@@ -43,6 +45,8 @@ namespace DefaultAudioDeviceSwitcher
                 Directory.CreateDirectory(dirName);
 
             File.WriteAllText(_filePath, Newtonsoft.Json.JsonConvert.SerializeObject(this));
+
+            SettingsSaved?.Invoke(this, new EventArgs());
         }
     }
 }

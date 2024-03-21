@@ -53,6 +53,12 @@ namespace DefaultAudioDeviceSwitcher
             }
         }
 
+        public HashSet<string> AvailableDevices => new MMDeviceEnumerator()
+            .EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)
+            .Select(x => x.ID)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet();
+
         public MyApplicationContext()
         {
             var appdataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -60,6 +66,7 @@ namespace DefaultAudioDeviceSwitcher
             var settingsPath = Path.Combine(appdataPath, "DefaultAudioDeviceSwitcher", "config.json");
 
             _settings = new Settings(settingsPath);
+            _settings.SettingsSaved += ConfigChanged;
 
             var contextMenuStrip = new ContextMenuStrip();
 
@@ -73,20 +80,18 @@ namespace DefaultAudioDeviceSwitcher
             {
                 if (e.Button == MouseButtons.Left)
                 {
-                    var availableDevices = new MMDeviceEnumerator().EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)
-                        .Select(x => x.ID)
-                        .ToHashSet();
+                    var availableDevices = AvailableDevices;
 
                     if (_activeDevice == DeviceKind.Speaker)
                     {
-                        while (string.IsNullOrWhiteSpace(_settings.HeadsetId) || !availableDevices.Contains(_settings.HeadsetId))
+                        while (!availableDevices.Contains(_settings.HeadsetId))
                             if (!ConfigError("No headset configured!")) return;
 
                         SetDefaultDevice(_settings.HeadsetId);
                     }
                     else
                     {
-                        while (string.IsNullOrWhiteSpace(_settings.SpeakerId) || !availableDevices.Contains(_settings.SpeakerId))
+                        while (!availableDevices.Contains(_settings.SpeakerId))
                             if (!ConfigError("No speaker configured!")) return;
 
                         SetDefaultDevice(_settings.SpeakerId);
@@ -98,6 +103,20 @@ namespace DefaultAudioDeviceSwitcher
             _notificationClient.DefaultDeviceChanged += DefaultDeviceChanged;
 
             SetActiveDevice(GetDefaultDeviceId());
+        }
+
+        void ConfigChanged(object? sender, EventArgs e)
+        {
+            if (_activeDevice == DeviceKind.Headset)
+            {
+                if (AvailableDevices.Contains(_settings.HeadsetId))
+                    SetDefaultDevice(_settings.HeadsetId);
+            }
+            else if (_activeDevice == DeviceKind.Speaker)
+            {
+                if (AvailableDevices.Contains(_settings.SpeakerId))
+                    SetDefaultDevice(_settings.SpeakerId);
+            }
         }
 
         bool ConfigError(string message)
