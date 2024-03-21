@@ -28,117 +28,114 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.cancelBtn = new System.Windows.Forms.Button();
-            this.saveBtn = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.communicationCheck = new System.Windows.Forms.CheckBox();
-            this.headsetCombo = new System.Windows.Forms.ComboBox();
-            this.speakerCombo = new System.Windows.Forms.ComboBox();
-            this.SuspendLayout();
+            cancelBtn = new Button();
+            saveBtn = new Button();
+            headsetLabel = new Label();
+            speakerLabel = new Label();
+            communicationCheck = new CheckBox();
+            headsetCombo = new ComboBox();
+            speakerCombo = new ComboBox();
+            SuspendLayout();
             // 
             // cancelBtn
             // 
-            this.cancelBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cancelBtn.Location = new System.Drawing.Point(296, 100);
-            this.cancelBtn.Name = "cancelBtn";
-            this.cancelBtn.Size = new System.Drawing.Size(75, 23);
-            this.cancelBtn.TabIndex = 0;
-            this.cancelBtn.Text = "Cancel";
-            this.cancelBtn.UseVisualStyleBackColor = true;
-            this.cancelBtn.Click += new System.EventHandler(this.cancelBtn_Click);
+            cancelBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            cancelBtn.Location = new Point(296, 100);
+            cancelBtn.Name = "cancelBtn";
+            cancelBtn.Size = new Size(75, 23);
+            cancelBtn.TabIndex = 0;
+            cancelBtn.Text = "Cancel";
+            cancelBtn.UseVisualStyleBackColor = true;
+            cancelBtn.Click += cancelBtn_Click;
             // 
             // saveBtn
             // 
-            this.saveBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.saveBtn.Location = new System.Drawing.Point(215, 100);
-            this.saveBtn.Name = "saveBtn";
-            this.saveBtn.Size = new System.Drawing.Size(75, 23);
-            this.saveBtn.TabIndex = 1;
-            this.saveBtn.Text = "Save";
-            this.saveBtn.UseVisualStyleBackColor = true;
-            this.saveBtn.Click += new System.EventHandler(this.saveBtn_Click);
+            saveBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            saveBtn.Location = new Point(215, 100);
+            saveBtn.Name = "saveBtn";
+            saveBtn.Size = new Size(75, 23);
+            saveBtn.TabIndex = 1;
+            saveBtn.Text = "Save";
+            saveBtn.UseVisualStyleBackColor = true;
+            saveBtn.Click += saveBtn_Click;
             // 
-            // label1
+            // headsetLabel
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 15);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(50, 15);
-            this.label1.TabIndex = 2;
-            this.label1.Text = "Headset";
+            headsetLabel.AutoSize = true;
+            headsetLabel.Location = new Point(12, 15);
+            headsetLabel.Name = "headsetLabel";
+            headsetLabel.Size = new Size(50, 15);
+            headsetLabel.TabIndex = 2;
+            headsetLabel.Text = "Headset";
             // 
-            // label2
+            // speakerLabel
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 44);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(48, 15);
-            this.label2.TabIndex = 4;
-            this.label2.Text = "Speaker";
+            speakerLabel.AutoSize = true;
+            speakerLabel.Location = new Point(12, 44);
+            speakerLabel.Name = "speakerLabel";
+            speakerLabel.Size = new Size(48, 15);
+            speakerLabel.TabIndex = 4;
+            speakerLabel.Text = "Speaker";
             // 
             // communicationCheck
             // 
-            this.communicationCheck.AutoSize = true;
-            this.communicationCheck.Location = new System.Drawing.Point(12, 70);
-            this.communicationCheck.Name = "communicationCheck";
-            this.communicationCheck.Size = new System.Drawing.Size(254, 19);
-            this.communicationCheck.TabIndex = 6;
-            this.communicationCheck.Text = "also change default communication device";
-            this.communicationCheck.UseVisualStyleBackColor = true;
+            communicationCheck.AutoSize = true;
+            communicationCheck.Location = new Point(12, 70);
+            communicationCheck.Name = "communicationCheck";
+            communicationCheck.Size = new Size(254, 19);
+            communicationCheck.TabIndex = 6;
+            communicationCheck.Text = "also change default communication device";
+            communicationCheck.UseVisualStyleBackColor = true;
             // 
             // headsetCombo
             // 
-            this.headsetCombo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.headsetCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.headsetCombo.FormattingEnabled = true;
-            this.headsetCombo.Location = new System.Drawing.Point(81, 12);
-            this.headsetCombo.Name = "headsetCombo";
-            this.headsetCombo.Size = new System.Drawing.Size(290, 23);
-            this.headsetCombo.TabIndex = 10;
+            headsetCombo.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            headsetCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+            headsetCombo.FormattingEnabled = true;
+            headsetCombo.Location = new Point(81, 12);
+            headsetCombo.Name = "headsetCombo";
+            headsetCombo.Size = new Size(290, 23);
+            headsetCombo.TabIndex = 10;
             // 
             // speakerCombo
             // 
-            this.speakerCombo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.speakerCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.speakerCombo.FormattingEnabled = true;
-            this.speakerCombo.Location = new System.Drawing.Point(81, 41);
-            this.speakerCombo.Name = "speakerCombo";
-            this.speakerCombo.Size = new System.Drawing.Size(290, 23);
-            this.speakerCombo.TabIndex = 11;
+            speakerCombo.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            speakerCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+            speakerCombo.FormattingEnabled = true;
+            speakerCombo.Location = new Point(81, 41);
+            speakerCombo.Name = "speakerCombo";
+            speakerCombo.Size = new Size(290, 23);
+            speakerCombo.TabIndex = 11;
             // 
             // ConfigForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(383, 135);
-            this.Controls.Add(this.speakerCombo);
-            this.Controls.Add(this.headsetCombo);
-            this.Controls.Add(this.communicationCheck);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.saveBtn);
-            this.Controls.Add(this.cancelBtn);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "ConfigForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "Configuration";
-            this.Load += new System.EventHandler(this.ConfigForm_Load);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(383, 135);
+            Controls.Add(speakerCombo);
+            Controls.Add(headsetCombo);
+            Controls.Add(communicationCheck);
+            Controls.Add(speakerLabel);
+            Controls.Add(headsetLabel);
+            Controls.Add(saveBtn);
+            Controls.Add(cancelBtn);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "ConfigForm";
+            StartPosition = FormStartPosition.Manual;
+            Text = "Configuration";
+            Load += ConfigForm_Load;
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
 
         private Button cancelBtn;
         private Button saveBtn;
-        private Label label1;
-        private Label label2;
+        private Label headsetLabel;
+        private Label speakerLabel;
         private CheckBox communicationCheck;
         private ComboBox headsetCombo;
         private ComboBox speakerCombo;

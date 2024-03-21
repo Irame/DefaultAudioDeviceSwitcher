@@ -55,6 +55,20 @@ namespace DefaultAudioDeviceSwitcher
             LoadSettings();
         }
 
+        private static Font RegularFont = new Font(Label.DefaultFont, FontStyle.Regular);
+        private static Font BoldFont = new Font(Label.DefaultFont, FontStyle.Bold);
+
+        public void HighlightDeviceKind(DeviceKind? deviceKind)
+        {
+            headsetLabel.Font = RegularFont;
+            speakerLabel.Font = RegularFont;
+
+            if (deviceKind == DeviceKind.Headset)
+                headsetLabel.Font = BoldFont;
+            else if (deviceKind == DeviceKind.Speaker)
+                speakerLabel.Font = BoldFont;
+        }
+
         private void CalcPosition()
         {
             var cursorPos = Cursor.Position;

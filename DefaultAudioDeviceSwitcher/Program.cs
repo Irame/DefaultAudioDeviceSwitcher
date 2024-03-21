@@ -20,7 +20,7 @@ namespace DefaultAudioDeviceSwitcher
         }
     }
 
-    enum DeviceKind { Headset, Speaker }
+    public enum DeviceKind { Headset, Speaker }
 
     class MyApplicationContext : ApplicationContext
     {
@@ -50,6 +50,8 @@ namespace DefaultAudioDeviceSwitcher
                         _trayIcon.Icon = Properties.Resources.Questionmark;
                         break;
                 }
+
+                _configForm?.HighlightDeviceKind(_activeDevice);
             }
         }
 
@@ -144,6 +146,7 @@ namespace DefaultAudioDeviceSwitcher
             if (_configForm == null)
             {
                 _configForm = new ConfigForm(_settings);
+                _configForm.HighlightDeviceKind(_activeDevice);
                 _configForm.ShowDialog();
                 _configForm = null;
             }
