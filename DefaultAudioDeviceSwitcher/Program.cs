@@ -86,15 +86,33 @@ namespace DefaultAudioDeviceSwitcher
 
                     if (_activeDevice == DeviceKind.Speaker)
                     {
+                        while (string.IsNullOrEmpty(_settings.HeadsetId))
+                        {
+                            if (!ConfigError("No headset configured!"))
+                                return;
+                        }
+
                         while (!availableDevices.Contains(_settings.HeadsetId))
-                            if (!ConfigError("No headset configured!")) return;
+                        {
+                            if (!ConfigError("Configured headset not found!"))
+                                return;
+                        }
 
                         SetDefaultDevice(_settings.HeadsetId);
                     }
                     else
                     {
+                        while (string.IsNullOrEmpty(_settings.SpeakerId))
+                        {
+                            if (!ConfigError("No speaker configured!"))
+                                return;
+                        }
+
                         while (!availableDevices.Contains(_settings.SpeakerId))
-                            if (!ConfigError("No speaker configured!")) return;
+                        {
+                            if (!ConfigError("Configured speaker not found!"))
+                                return;
+                        }
 
                         SetDefaultDevice(_settings.SpeakerId);
                     }
