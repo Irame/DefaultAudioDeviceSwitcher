@@ -16,3 +16,4 @@ jobs:
       with:
         manifest-path: com.github.irame.DefaultAudioDeviceSwitcher.yaml
         cache-key: flatpak-builder-${{ github.sha }}
+        default-branch: main
