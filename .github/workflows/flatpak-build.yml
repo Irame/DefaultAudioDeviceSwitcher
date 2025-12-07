@@ -7,6 +7,8 @@ jobs:
   flatpak:
     name: "Flatpak"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
       options: --privileged
@@ -38,7 +40,7 @@ jobs:
       with:
         manifest-path: com.github.irame.DefaultAudioDeviceSwitcher.yaml
         cache-key: flatpak-builder-${{ github.sha }}
-        branch: main
+        bundle: DefaultAudioDeviceSwitcher.flatpak
 
     # Create GitHub release and upload bundle (as before)
     - name: Create Release
@@ -48,9 +50,6 @@ jobs:
         name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
-        files: |
-          *.flatpak
-          *.flatpakref
-          *.flatpakrepo
+        files: DefaultAudioDeviceSwitcher.flatpak
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
