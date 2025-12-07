@@ -378,7 +378,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
         private void SetDefaultSink(string sink)
         {
-            Run("pactl", $"set-default-sink {sink}");
+            Run("flatpak-spawn", $"--host pactl set-default-sink {sink}");
 
             var inputs = Run("pactl", "list short sink-inputs");
             foreach (var l in inputs.Split('\n'))
@@ -387,7 +387,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
                 if (parts.Length == 0) continue;
 
                 if (int.TryParse(parts[0], out var id))
-                    Run("pactl", $"move-sink-input {id} {sink}");
+                    Run("flatpak-spawn", $"--host pactl move-sink-input {id} {sink}");
             }
         }
 
