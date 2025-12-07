@@ -31,9 +31,8 @@ modules:
   - name: DefaultAudioDeviceSwitcher
     buildsystem: simple
     sources:
-      - type: git
-        branch: main
-        url: https://github.com/Irame/DefaultAudioDeviceSwitcher
+      - type: dir
+        path: .
       - ./nuget-sources.json
     build-commands:
       - dotnet publish DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj -c Release --no-self-contained --source ./nuget-sources
