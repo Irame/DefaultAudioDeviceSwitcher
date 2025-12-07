@@ -12,8 +12,45 @@ jobs:
       options: --privileged
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install SDK and extensions
+      run: |
+        flatpak install -y --noninteractive flathub \
+          org.freedesktop.Sdk//24.08 \
+          org.freedesktop.Sdk.Extension.dotnet10//24.08
+
+    - name: Download flatpak-dotnet-generator
+      run: |
+        wget https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/master/dotnet/flatpak-dotnet-generator.py
+        chmod +x flatpak-dotnet-generator.py
+
+    - name: Generate NuGet sources
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/.dotnet
+        export DOTNET_ROOT=$GITHUB_WORKSPACE/.dotnet
+        export DOTNET_CLI_HOME=$GITHUB_WORKSPACE/.dotnet
+        python3 flatpak-dotnet-generator.py --dotnet 10 --freedesktop 24.08 \
+          nuget-sources.json \
+          DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj
+
+    # Build Flatpak
     - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
       with:
         manifest-path: com.github.irame.DefaultAudioDeviceSwitcher.yaml
         cache-key: flatpak-builder-${{ github.sha }}
-        default-branch: main
+        branch: main
+
+    # Create GitHub release and upload bundle (as before)
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        files: |
+          *.flatpak
+          *.flatpakref
+          *.flatpakrepo
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
