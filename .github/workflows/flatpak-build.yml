@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [main]
+    tags: ["v*"]
   pull_request:
 name: CI
 jobs:
@@ -38,6 +38,7 @@ jobs:
     # Build Flatpak
     - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
       with:
+        branch: ${{ github.ref_name }}
         manifest-path: com.github.irame.DefaultAudioDeviceSwitcher.yaml
         cache-key: flatpak-builder-${{ github.sha }}
         bundle: DefaultAudioDeviceSwitcher.flatpak
