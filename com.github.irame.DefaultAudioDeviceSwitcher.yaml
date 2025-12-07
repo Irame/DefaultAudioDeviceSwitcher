@@ -12,8 +12,7 @@ build-options:
 command: DefaultAudioDeviceSwitcher.Linux
 
 finish-args:
-  - --socket=wayland
-  - --socket=fallback-x11
+  - --socket=x11 # tray icons are not supported on wayland dunno what to do...
   - --env=DOTNET_ROOT=/app/lib/dotnet
 
   - --filesystem=xdg-run/pulse:rw
