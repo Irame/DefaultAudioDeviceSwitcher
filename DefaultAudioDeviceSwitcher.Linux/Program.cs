@@ -77,12 +77,15 @@ namespace DefaultAudioDeviceSwitcher.Linux
         {
             Gtk.Application.Init();
 
-            var settingsPath = Path.Combine(
+            var configPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "DefaultAudioDeviceSwitcher",
-                "config.json"
+                "DefaultAudioDeviceSwitcher"
             );
-            var settings = Settings.Load(settingsPath);
+
+            Directory.CreateDirectory(configPath);
+
+            var configFile = Path.Combine(configPath, "config.json");
+            var settings = Settings.Load(configFile);
 
             var ctx = new TrayAppContext(settings);
 
