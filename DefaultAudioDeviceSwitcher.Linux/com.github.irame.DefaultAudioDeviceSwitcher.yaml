@@ -1,0 +1,41 @@
+id: com.github.irame.DefaultAudioDeviceSwitcher
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.dotnet10
+build-options:
+  prepend-path: "/usr/lib/sdk/dotnet10/bin"
+  append-ld-library-path: "/usr/lib/sdk/dotnet10/lib"
+  prepend-pkg-config-path: "/usr/lib/sdk/dotnet10/lib/pkgconfig"
+
+command: DefaultAudioDeviceSwitcher.Linux
+
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --env=DOTNET_ROOT=/app/lib/dotnet
+
+  - --filesystem=xdg-run/pulse:rw
+  - --filesystem=/usr/bin/pactl:ro
+
+  # needed for flatpak-spawn --host
+  - --talk-name=org.freedesktop.Flatpak
+
+modules:
+  - name: dotnet
+    buildsystem: simple
+    build-commands:
+    - /usr/lib/sdk/dotnet10/bin/install.sh
+
+  - name: DefaultAudioDeviceSwitcher
+    buildsystem: simple
+    sources:
+      - type: git
+        branch: main
+        url: https://github.com/Irame/DefaultAudioDeviceSwitcher
+      - ./nuget-sources.json
+    build-commands:
+      - dotnet publish DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj -c Release --no-self-contained --source ./nuget-sources
+      - mkdir -p ${FLATPAK_DEST}/bin
+      - cp -r DefaultAudioDeviceSwitcher.Linux/bin/Release/net10.0/publish/* ${FLATPAK_DEST}/bin
