@@ -136,9 +136,9 @@ namespace DefaultAudioDeviceSwitcher.Linux
             var exeDir = AppContext.BaseDirectory;
             var iconsDir = Path.Combine(exeDir, "Icons");
             Console.WriteLine("Load ing icons from " + iconsDir);
-            _iconHeadset = new Gdk.Pixbuf(Path.Combine(iconsDir, "Headset.ico"));
-            _iconSpeaker = new Gdk.Pixbuf(Path.Combine(iconsDir, "Speaker.ico"));
-            _iconUnknown = new Gdk.Pixbuf(Path.Combine(iconsDir, "Questionmark.ico"));
+            _iconHeadset = new Gdk.Pixbuf(Path.Combine(iconsDir, "Headset.png"));
+            _iconSpeaker = new Gdk.Pixbuf(Path.Combine(iconsDir, "Speaker.png"));
+            _iconUnknown = new Gdk.Pixbuf(Path.Combine(iconsDir, "Questionmark.png"));
         }
 
         private void CreateTrayIcon()

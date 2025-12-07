@@ -11,13 +11,13 @@
     <PackageReference Include="GtkSharp" Version="3.24.24.95" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="Icons\Headset.ico">
+    <None Update="Icons\Headset.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Icons\Questionmark.ico">
+    <None Update="Icons\Questionmark.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Icons\Speaker.ico">
+    <None Update="Icons\Speaker.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
