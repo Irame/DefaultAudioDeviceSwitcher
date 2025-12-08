@@ -366,3 +366,4 @@ FodyWeavers.xsd
 repo/
 .flatpak-builder/
 build-dir/
+nuget-sources.json
