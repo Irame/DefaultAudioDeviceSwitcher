@@ -25,7 +25,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
         public string? HeadsetName { get; set; }
         public string? SpeakerName { get; set; }
-        
+
         public static Settings Load(string filePath)
         {
             Settings settings;
@@ -34,7 +34,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
             else
                 settings = new Settings();
             settings._filePath = filePath;
-            
+
             return settings;
         }
 
@@ -104,7 +104,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
         private Gtk.Menu _menu;
         private Gtk.MenuItem _configItem;
         private Gtk.MenuItem _exitItem;
-        
+
         private Gdk.Pixbuf _iconHeadset;
         private Gdk.Pixbuf _iconSpeaker;
         private Gdk.Pixbuf _iconUnknown;
@@ -130,7 +130,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
             // Start background watcher
             StartPulseAudioWatcher();
-            
+
             DetectCurrentDevice();
         }
 
@@ -312,13 +312,13 @@ namespace DefaultAudioDeviceSwitcher.Linux
             {
                 if (!soundCard.Name.StartsWith("alsa_card."))
                     continue;
-                
+
                 var deviceSlug = soundCard.Name["alsa_card.".Length..];
                 var deviceName = soundCard.Properties.GetValueOrDefault("device.nick")
                                  ?? soundCard.Properties.GetValueOrDefault("api.alsa.card.name");
 
                 HashSet<string> processedSinks = [];
-                
+
                 foreach (var (profileName, profile) in soundCard.Profiles.OrderBy(x => x.Key.Contains("input:")))
                 {
                     if (profile is { Available: true, Sinks: > 0 })
@@ -336,37 +336,18 @@ namespace DefaultAudioDeviceSwitcher.Linux
                     }
                 }
             }
-            
+
             return sinks;
         }
-        
+
         private void ShowConfig()
         {
             var sinks = GetSinks();
             if (sinks == null)
                 return;
-            
-            Console.WriteLine("Available sinks:");
-            for (int i = 0; i < sinks.Count; i++)
-            {
-                Console.WriteLine($"{i}: {sinks[i]} (name: {sinks[i].Name})");
-            }
 
-            Console.WriteLine("\nEnter headset sink number (or press Enter to skip):");
-            if (int.TryParse(Console.ReadLine() ?? "", out var headsetIdx) &&
-                headsetIdx >= 0 && headsetIdx < sinks.Count)
-            {
-                _settings.HeadsetName = sinks[headsetIdx].Name;
-            }
-
-            Console.WriteLine("Enter speaker sink number (or press Enter to skip):");
-            if (int.TryParse(Console.ReadLine() ?? "", out var speakerIdx) &&
-                speakerIdx >= 0 && speakerIdx < sinks.Count)
-            {
-                _settings.SpeakerName = sinks[speakerIdx].Name;
-            }
-
-            _settings.Save();
+            var window = new ConfigWindow(_settings, sinks);
+            window.Show();
         }
 
         private string? GetDefaultSink()
@@ -414,6 +395,134 @@ namespace DefaultAudioDeviceSwitcher.Linux
                 Console.WriteLine($"Error running {cmd}: {ex.Message}");
                 return "";
             }
+        }
+    }
+
+    class ConfigWindow : Gtk.Window
+    {
+        private readonly Settings _settings;
+        private readonly List<SinkInfo> _sinks;
+        private Gtk.ComboBox _headsetCombo;
+        private Gtk.ComboBox _speakerCombo;
+
+        public ConfigWindow(Settings settings, List<SinkInfo> sinks)
+            : base(Gtk.WindowType.Toplevel)
+        {
+            _settings = settings;
+            _sinks = sinks;
+
+            Title = "Audio Device Configuration";
+            DefaultWidth = 400;
+            DefaultHeight = 200;
+            WindowPosition = Gtk.WindowPosition.Center;
+            DeleteEvent += (o, args) => Destroy();
+
+            var vbox = new Gtk.VBox(false, 10) { MarginStart = 20, MarginEnd = 20, MarginTop = 20, MarginBottom = 20 };
+
+            // Headset label and combo
+            var headsetLabel = new Gtk.Label("Headset:") { Xalign = 0 };
+            vbox.PackStart(headsetLabel, false, false, 0);
+
+            _headsetCombo = new Gtk.ComboBox();
+            var headsetStore = new Gtk.ListStore(typeof(string));
+            headsetStore.AppendValues("(Not configured)");
+            foreach (var sink in _sinks)
+            {
+                headsetStore.AppendValues(sink.ToString());
+            }
+            _headsetCombo.Model = headsetStore;
+            var headsetCell = new Gtk.CellRendererText();
+            _headsetCombo.PackStart(headsetCell, true);
+            _headsetCombo.AddAttribute(headsetCell, "text", 0);
+
+            // Set active item for headset
+            int headsetIdx = 0;
+            if (!string.IsNullOrEmpty(_settings.HeadsetName))
+            {
+                for (int i = 0; i < _sinks.Count; i++)
+                {
+                    if (_sinks[i].Name == _settings.HeadsetName)
+                    {
+                        headsetIdx = i + 1;
+                        break;
+                    }
+                }
+            }
+            _headsetCombo.Active = headsetIdx;
+            vbox.PackStart(_headsetCombo, false, false, 0);
+
+            // Speaker label and combo
+            var speakerLabel = new Gtk.Label("Speaker:") { Xalign = 0 };
+            vbox.PackStart(speakerLabel, false, false, 0);
+
+            _speakerCombo = new Gtk.ComboBox();
+            var speakerStore = new Gtk.ListStore(typeof(string));
+            speakerStore.AppendValues("(Not configured)");
+            foreach (var sink in _sinks)
+            {
+                speakerStore.AppendValues(sink.ToString());
+            }
+            _speakerCombo.Model = speakerStore;
+            var speakerCell = new Gtk.CellRendererText();
+            _speakerCombo.PackStart(speakerCell, true);
+            _speakerCombo.AddAttribute(speakerCell, "text", 0);
+
+            // Set active item for speaker
+            int speakerIdx = 0;
+            if (!string.IsNullOrEmpty(_settings.SpeakerName))
+            {
+                for (int i = 0; i < _sinks.Count; i++)
+                {
+                    if (_sinks[i].Name == _settings.SpeakerName)
+                    {
+                        speakerIdx = i + 1;
+                        break;
+                    }
+                }
+            }
+            _speakerCombo.Active = speakerIdx;
+            vbox.PackStart(_speakerCombo, false, false, 0);
+
+            // Buttons
+            var hbox = new Gtk.HBox(true, 10) { MarginTop = 20 };
+            var saveBtn = new Gtk.Button("Save");
+            saveBtn.Clicked += OnSaveClicked;
+            hbox.PackStart(saveBtn, true, true, 0);
+
+            var cancelBtn = new Gtk.Button("Cancel");
+            cancelBtn.Clicked += (o, args) => Destroy();
+            hbox.PackStart(cancelBtn, true, true, 0);
+
+            vbox.PackStart(hbox, false, false, 0);
+
+            Add(vbox);
+            ShowAll();
+        }
+
+        private void OnSaveClicked(object? sender, EventArgs e)
+        {
+            int headsetActive = _headsetCombo.Active;
+            if (headsetActive > 0 && headsetActive <= _sinks.Count)
+            {
+                _settings.HeadsetName = _sinks[headsetActive - 1].Name;
+            }
+            else
+            {
+                _settings.HeadsetName = null;
+            }
+
+            int speakerActive = _speakerCombo.Active;
+            if (speakerActive > 0 && speakerActive <= _sinks.Count)
+            {
+                _settings.SpeakerName = _sinks[speakerActive - 1].Name;
+            }
+            else
+            {
+                _settings.SpeakerName = null;
+            }
+
+            _settings.Save();
+            Destroy();
         }
     }
 }
