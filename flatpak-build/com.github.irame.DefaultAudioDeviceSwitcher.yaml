@@ -37,3 +37,9 @@ modules:
       - dotnet publish DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj -c Release --no-self-contained --source ./nuget-sources
       - mkdir -p ${FLATPAK_DEST}/bin
       - cp -r DefaultAudioDeviceSwitcher.Linux/bin/Release/net10.0/publish/* ${FLATPAK_DEST}/bin
+
+      - mkdir -p ${FLATPAK_DEST}/share/applications
+      - install -m644 flatpak-assets/com.github.irame.DefaultAudioDeviceSwitcher.desktop ${FLATPAK_DEST}/share/applications/
+
+      - mkdir -p ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps
+      - install -m644 flatpak-assets/com.github.irame.DefaultAudioDeviceSwitcher.png ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/

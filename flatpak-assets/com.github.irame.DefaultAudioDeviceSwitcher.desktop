@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Default Audio Device Switcher
+Exec=DefaultAudioDeviceSwitcher.Linux
+Icon=com.github.irame.DefaultAudioDeviceSwitcher
+X-Flatpak=com.github.irame.DefaultAudioDeviceSwitcher
