@@ -31,7 +31,7 @@ modules:
     buildsystem: simple
     sources:
       - type: dir
-        path: .
+        path: ..
       - ./nuget-sources.json
     build-commands:
       - dotnet publish DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj -c Release --no-self-contained --source ./nuget-sources

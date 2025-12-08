@@ -32,14 +32,14 @@ jobs:
         export DOTNET_ROOT=$GITHUB_WORKSPACE/.dotnet
         export DOTNET_CLI_HOME=$GITHUB_WORKSPACE/.dotnet
         python3 flatpak-dotnet-generator.py --dotnet 10 --freedesktop 24.08 \
-          nuget-sources.json \
+          flatpak-build/nuget-sources.json \
           DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj
 
     # Build Flatpak
     - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
       with:
         branch: ${{ github.ref_name }}
-        manifest-path: com.github.irame.DefaultAudioDeviceSwitcher.yaml
+        manifest-path: flatpak-build/com.github.irame.DefaultAudioDeviceSwitcher.yaml
         cache-key: flatpak-builder-${{ github.sha }}
         bundle: DefaultAudioDeviceSwitcher.flatpak
 
