@@ -21,7 +21,6 @@ finish-args:
   - --talk-name=org.ayatana.indicator.application
   # PulseAudio / PipeWire
   - --socket=pulseaudio
-  - --filesystem=xdg-run/pulse:rw
   # pactl binary access
   - --filesystem=/usr/bin/pactl:ro
   # flatpak-spawn --host
