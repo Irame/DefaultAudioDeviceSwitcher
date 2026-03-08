@@ -359,7 +359,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
         private void SetDefaultSink(string sink)
         {
-            Run("flatpak-spawn", $"--host pactl set-default-sink {sink}");
+            Run("pactl", $"set-default-sink {sink}", useSpawn: true);
 
             var inputs = Run("pactl", "list short sink-inputs");
             foreach (var l in inputs.Split('\n'))
@@ -368,15 +368,30 @@ namespace DefaultAudioDeviceSwitcher.Linux
                 if (parts.Length == 0) continue;
 
                 if (int.TryParse(parts[0], out var id))
-                    Run("flatpak-spawn", $"--host pactl move-sink-input {id} {sink}");
+                    Run("pactl", $"move-sink-input {id} {sink}", useSpawn: true);
             }
         }
+        
+        private bool IsInsideFlatpak => File.Exists("/.flatpak-info");
 
-        private string Run(string cmd, string args)
+        private string Run(string cmd, string args, bool useSpawn = false)
         {
+            string actualCmd, actualArgs;
+    
+            if (IsInsideFlatpak && useSpawn)
+            {
+                actualCmd = "flatpak-spawn";
+                actualArgs = $"--host {cmd} {args}";
+            }
+            else
+            {
+                actualCmd = cmd;
+                actualArgs = args;
+            }
+
             try
             {
-                var psi = new ProcessStartInfo(cmd, args)
+                var psi = new ProcessStartInfo(actualCmd, actualArgs)
                 {
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -392,7 +407,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error running {cmd}: {ex.Message}");
+                Console.Error.WriteLine($"Error running {cmd}: {ex.Message}");
                 return "";
             }
         }
