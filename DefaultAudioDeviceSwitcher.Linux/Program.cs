@@ -100,14 +100,9 @@ namespace DefaultAudioDeviceSwitcher.Linux
         private readonly Settings _settings;
         private DeviceKind? _activeDevice;
 
-        private Gtk.StatusIcon _icon;
         private Gtk.Menu _menu;
         private Gtk.MenuItem _configItem;
         private Gtk.MenuItem _exitItem;
-
-        private Gdk.Pixbuf _iconHeadset;
-        private Gdk.Pixbuf _iconSpeaker;
-        private Gdk.Pixbuf _iconUnknown;
 
         private CancellationTokenSource _pulseWatcherCts = new();
 
@@ -117,7 +112,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
             set
             {
                 _activeDevice = value;
-                UpdateIndicatorLabel();
+                UpdateIndicator();
             }
         }
 
@@ -125,7 +120,6 @@ namespace DefaultAudioDeviceSwitcher.Linux
         {
             _settings = settings;
 
-            LoadIcons();
             CreateTrayIcon();
 
             // Start background watcher
@@ -134,29 +128,57 @@ namespace DefaultAudioDeviceSwitcher.Linux
             DetectCurrentDevice();
         }
 
-        private void LoadIcons()
+        private IntPtr _indicator = IntPtr.Zero;
+
+        private string CreateIconTheme()
         {
-            var exeDir = AppContext.BaseDirectory;
-            var iconsDir = Path.Combine(exeDir, "Icons");
-            Console.WriteLine("Load ing icons from " + iconsDir);
-            _iconHeadset = new Gdk.Pixbuf(Path.Combine(iconsDir, "Headset.png"));
-            _iconSpeaker = new Gdk.Pixbuf(Path.Combine(iconsDir, "Speaker.png"));
-            _iconUnknown = new Gdk.Pixbuf(Path.Combine(iconsDir, "Questionmark.png"));
+            var runtimeDir = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") ?? Path.GetTempPath();
+            var themeRoot = Path.Combine(runtimeDir, "dads-icons");
+            var iconDir = Path.Combine(themeRoot, "hicolor", "256x256", "apps");
+            Directory.CreateDirectory(iconDir);
+
+            File.Copy(Path.Combine(AppContext.BaseDirectory, "Icons", "Headset.png"),
+                Path.Combine(iconDir, "dads-headset.png"), overwrite: true);
+            File.Copy(Path.Combine(AppContext.BaseDirectory, "Icons", "Speaker.png"),
+                Path.Combine(iconDir, "dads-speaker.png"), overwrite: true);
+            File.Copy(Path.Combine(AppContext.BaseDirectory, "Icons", "Questionmark.png"),
+                Path.Combine(iconDir, "dads-unknown.png"), overwrite: true);
+
+            // index.theme must be at the theme root, not inside hicolor/...
+            File.WriteAllText(Path.Combine(themeRoot, "index.theme"), 
+                """
+                [Icon Theme]
+                Name=dads-icons
+                Directories=hicolor/256x256/apps
+
+                [hicolor/256x256/apps]
+                Size=256
+                Type=Fixed
+                """);
+
+            _indicator = AppIndicatorNative.app_indicator_new(
+                "default-audio-device-switcher",
+                "dads-unknown",
+                AppIndicatorCategory.Hardware);
+
+            return themeRoot;
         }
 
         private void CreateTrayIcon()
         {
-            _icon = new Gtk.StatusIcon
-            {
-                Visible = true,
-                TooltipText = "Default Audio Device Switcher",
-                Pixbuf = _iconUnknown
-            };
+            var themeRoot = CreateIconTheme();
 
-            _icon.PopupMenu += OnPopupMenu;
-            _icon.Activate += OnActivate;
+            AppIndicatorNative.app_indicator_set_icon_theme_path(_indicator, themeRoot);
+            AppIndicatorNative.app_indicator_set_status(_indicator, AppIndicatorStatus.Active);
+            AppIndicatorNative.app_indicator_set_title(_indicator, "Default Audio Device Switcher");
 
+            // Build menu
             _menu = new Gtk.Menu();
+
+            // Add a "Switch" item for left-click equivalent
+            var switchItem = new Gtk.MenuItem("Switch Audio Device");
+            switchItem.Activated += (s, e) => SwitchDevice();
+            _menu.Append(switchItem);
 
             _configItem = new Gtk.MenuItem("Config");
             _configItem.Activated += (s, e) => ShowConfig();
@@ -167,12 +189,15 @@ namespace DefaultAudioDeviceSwitcher.Linux
             _menu.Append(_exitItem);
 
             _menu.ShowAll();
+
+            AppIndicatorNative.app_indicator_set_secondary_activate_target(_indicator, switchItem.Handle);
+            AppIndicatorNative.app_indicator_set_menu(_indicator, _menu.Handle);
         }
 
         // ------------------------------------------------------
-        // 1. LEFT CLICK → Switch device
+        // 1. Menu Handlers
         // ------------------------------------------------------
-        private void OnActivate(object? sender, EventArgs e)
+        private void SwitchDevice()
         {
             Console.WriteLine("Left-click: switching audio device");
 
@@ -184,9 +209,20 @@ namespace DefaultAudioDeviceSwitcher.Linux
                 SwitchTo(DeviceKind.Headset);
         }
 
-        private void OnPopupMenu(object o, Gtk.PopupMenuArgs args)
+        private void ShowConfig()
         {
-            _menu.Popup();
+            var sinks = GetSinks();
+            if (sinks == null)
+                return;
+
+            var window = new ConfigWindow(_settings, sinks);
+            window.Show();
+        }
+
+        private void Exit()
+        {
+            _pulseWatcherCts.Cancel();
+            Gtk.Application.Quit();
         }
 
         // ------------------------------------------------------
@@ -235,29 +271,27 @@ namespace DefaultAudioDeviceSwitcher.Linux
         // ------------------------------------------------------
         // 4. UPDATE TRAY ICON
         // ------------------------------------------------------
-        private void UpdateIndicatorLabel()
+        private void UpdateIndicator()
         {
-            var label = _activeDevice switch
+            var iconName = _activeDevice switch
             {
-                DeviceKind.Headset => "Headset",
-                DeviceKind.Speaker => "Speaker",
-                _ => "?"
+                DeviceKind.Headset => "dads-headset",
+                DeviceKind.Speaker => "dads-speaker",
+                _ => "dads-unknown"
             };
 
-            _icon.TooltipText = $"Current audio: {label}";
-
-            _icon.Pixbuf = _activeDevice switch
+            var tooltip = _activeDevice switch
             {
-                DeviceKind.Headset => _iconHeadset,
-                DeviceKind.Speaker => _iconSpeaker,
-                _ => _iconUnknown,
+                DeviceKind.Headset => "Current audio: Headset",
+                DeviceKind.Speaker => "Current audio: Speaker",
+                _ => "Current audio: Unknown"
             };
-        }
 
-        private void Exit()
-        {
-            _pulseWatcherCts.Cancel();
-            Gtk.Application.Quit();
+            if (_indicator != IntPtr.Zero)
+            {
+                AppIndicatorNative.app_indicator_set_icon(_indicator, iconName);
+                AppIndicatorNative.app_indicator_set_title(_indicator, tooltip);
+            }
         }
 
         // ------------------------------------------------------
@@ -340,16 +374,6 @@ namespace DefaultAudioDeviceSwitcher.Linux
             return sinks;
         }
 
-        private void ShowConfig()
-        {
-            var sinks = GetSinks();
-            if (sinks == null)
-                return;
-
-            var window = new ConfigWindow(_settings, sinks);
-            window.Show();
-        }
-
         private string? GetDefaultSink()
         {
             var infoStr = Run("pactl", "--format=json info");
@@ -371,13 +395,13 @@ namespace DefaultAudioDeviceSwitcher.Linux
                     Run("pactl", $"move-sink-input {id} {sink}", useSpawn: true);
             }
         }
-        
+
         private bool IsInsideFlatpak => File.Exists("/.flatpak-info");
 
         private string Run(string cmd, string args, bool useSpawn = false)
         {
             string actualCmd, actualArgs;
-    
+
             if (IsInsideFlatpak && useSpawn)
             {
                 actualCmd = "flatpak-spawn";
