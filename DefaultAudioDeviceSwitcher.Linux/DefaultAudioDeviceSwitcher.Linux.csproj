@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(FLATPAK_ID)' != ''">
+    <DefineConstants>$(DefineConstants);FLATPAK</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <!-- These package names are the intended dependencies; you may need to choose the exact versions available on NuGet. -->
     <PackageReference Include="GtkSharp" Version="3.24.24.95" />

@@ -12,20 +12,29 @@ build-options:
 command: DefaultAudioDeviceSwitcher.Linux
 
 finish-args:
-  - --socket=x11 # tray icons are not supported on wayland dunno what to do...
+  # Support both X11 (fallback) and Wayland
+  - --socket=fallback-x11
+  - --socket=wayland
+  # DBus session access for StatusNotifierItem (KDE/Wayland tray)
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=com.canonical.indicator.application
+  - --talk-name=org.ayatana.indicator.application
+  # PulseAudio / PipeWire
+  - --socket=pulseaudio
+  - --filesystem=xdg-run/pulse:rw
+  # pactl binary access
+  - --filesystem=/usr/bin/pactl:ro
+  # flatpak-spawn --host
+  - --talk-name=org.freedesktop.Flatpak
   - --env=DOTNET_ROOT=/app/lib/dotnet
 
-  - --filesystem=xdg-run/pulse:rw
-  - --filesystem=/usr/bin/pactl:ro
-
-  # needed for flatpak-spawn --host
-  - --talk-name=org.freedesktop.Flatpak
-
 modules:
+  - shared-modules/libappindicator/libappindicator-gtk3-12.10.json
+
   - name: dotnet
     buildsystem: simple
     build-commands:
-    - /usr/lib/sdk/dotnet10/bin/install.sh
+      - /usr/lib/sdk/dotnet10/bin/install.sh
 
   - name: DefaultAudioDeviceSwitcher
     buildsystem: simple
@@ -34,12 +43,13 @@ modules:
         path: ..
       - ./nuget-sources.json
     build-commands:
-      - dotnet publish DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj -c Release --no-self-contained --source ./nuget-sources
+      - dotnet publish DefaultAudioDeviceSwitcher.Linux/DefaultAudioDeviceSwitcher.Linux.csproj
+          -c Release --no-self-contained --source ./nuget-sources
       - mkdir -p ${FLATPAK_DEST}/bin
       - cp -r DefaultAudioDeviceSwitcher.Linux/bin/Release/net10.0/publish/* ${FLATPAK_DEST}/bin
-
       - mkdir -p ${FLATPAK_DEST}/share/applications
-      - install -m644 flatpak-assets/com.github.irame.DefaultAudioDeviceSwitcher.desktop ${FLATPAK_DEST}/share/applications/
-
+      - install -m644 flatpak-assets/com.github.irame.DefaultAudioDeviceSwitcher.desktop
+          ${FLATPAK_DEST}/share/applications/
       - mkdir -p ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps
-      - install -m644 flatpak-assets/com.github.irame.DefaultAudioDeviceSwitcher.png ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/
+      - install -m644 flatpak-assets/com.github.irame.DefaultAudioDeviceSwitcher.png
+          ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/

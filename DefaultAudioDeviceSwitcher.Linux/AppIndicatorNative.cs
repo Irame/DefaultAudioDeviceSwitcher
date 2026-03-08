@@ -7,8 +7,11 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
     internal static class AppIndicatorNative
     {
-        // Try ayatana first, fall back to legacy appindicator
-        private const string Lib = "libayatana-appindicator3.so.1";
+        #if FLATPAK
+            private const string Lib = "libappindicator3.so.1";
+        #else
+            private const string Lib = "libayatana-appindicator3.so.1";
+        #endif
 
         [DllImport(Lib, CharSet = CharSet.Ansi)]
         public static extern IntPtr app_indicator_new(string id, string iconName, AppIndicatorCategory category);
