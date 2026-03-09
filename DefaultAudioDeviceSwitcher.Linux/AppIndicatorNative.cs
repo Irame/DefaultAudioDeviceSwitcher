@@ -15,6 +15,9 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
         [DllImport(Lib, CharSet = CharSet.Ansi)]
         public static extern IntPtr app_indicator_new(string id, string iconName, AppIndicatorCategory category);
+        
+        [DllImport(Lib, CharSet = CharSet.Ansi)]
+        public static extern IntPtr app_indicator_new_with_path(string id, string iconName, AppIndicatorCategory category, string iconThemePath);
 
         [DllImport(Lib)]
         public static extern void app_indicator_set_status(IntPtr indicator, AppIndicatorStatus status);

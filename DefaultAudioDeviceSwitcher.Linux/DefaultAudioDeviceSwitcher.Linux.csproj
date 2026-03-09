@@ -10,18 +10,6 @@
     <DefineConstants>$(DefineConstants);FLATPAK</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <!-- These package names are the intended dependencies; you may need to choose the exact versions available on NuGet. -->
     <PackageReference Include="GtkSharp" Version="3.24.24.95" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="Icons\Headset.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\Questionmark.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\Speaker.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>

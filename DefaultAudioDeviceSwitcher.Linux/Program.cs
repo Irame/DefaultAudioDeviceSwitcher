@@ -116,11 +116,13 @@ namespace DefaultAudioDeviceSwitcher.Linux
             }
         }
 
+        private IntPtr _indicator = IntPtr.Zero;
+
         public TrayAppContext(Settings settings)
         {
             _settings = settings;
 
-            CreateTrayIcon();
+            _indicator = CreateTrayIcon();
 
             // Start background watcher
             StartPulseAudioWatcher();
@@ -128,49 +130,17 @@ namespace DefaultAudioDeviceSwitcher.Linux
             DetectCurrentDevice();
         }
 
-        private IntPtr _indicator = IntPtr.Zero;
+        private static bool IsInsideFlatpak => File.Exists("/.flatpak-info");
 
-        private string CreateIconTheme()
+        private IntPtr CreateTrayIcon()
         {
-            var runtimeDir = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") ?? Path.GetTempPath();
-            var themeRoot = Path.Combine(runtimeDir, "dads-icons");
-            var iconDir = Path.Combine(themeRoot, "hicolor", "256x256", "apps");
-            Directory.CreateDirectory(iconDir);
-
-            File.Copy(Path.Combine(AppContext.BaseDirectory, "Icons", "Headset.png"),
-                Path.Combine(iconDir, "dads-headset.png"), overwrite: true);
-            File.Copy(Path.Combine(AppContext.BaseDirectory, "Icons", "Speaker.png"),
-                Path.Combine(iconDir, "dads-speaker.png"), overwrite: true);
-            File.Copy(Path.Combine(AppContext.BaseDirectory, "Icons", "Questionmark.png"),
-                Path.Combine(iconDir, "dads-unknown.png"), overwrite: true);
-
-            // index.theme must be at the theme root, not inside hicolor/...
-            File.WriteAllText(Path.Combine(themeRoot, "index.theme"), 
-                """
-                [Icon Theme]
-                Name=dads-icons
-                Directories=hicolor/256x256/apps
-
-                [hicolor/256x256/apps]
-                Size=256
-                Type=Fixed
-                """);
-
-            _indicator = AppIndicatorNative.app_indicator_new(
+            var indicator = AppIndicatorNative.app_indicator_new(
                 "default-audio-device-switcher",
-                "dads-unknown",
+                "question",
                 AppIndicatorCategory.Hardware);
 
-            return themeRoot;
-        }
-
-        private void CreateTrayIcon()
-        {
-            var themeRoot = CreateIconTheme();
-
-            AppIndicatorNative.app_indicator_set_icon_theme_path(_indicator, themeRoot);
-            AppIndicatorNative.app_indicator_set_status(_indicator, AppIndicatorStatus.Active);
-            AppIndicatorNative.app_indicator_set_title(_indicator, "Default Audio Device Switcher");
+            AppIndicatorNative.app_indicator_set_status(indicator, AppIndicatorStatus.Active);
+            AppIndicatorNative.app_indicator_set_title(indicator, "Default Audio Device Switcher");
 
             // Build menu
             _menu = new Gtk.Menu();
@@ -190,8 +160,10 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
             _menu.ShowAll();
 
-            AppIndicatorNative.app_indicator_set_secondary_activate_target(_indicator, switchItem.Handle);
-            AppIndicatorNative.app_indicator_set_menu(_indicator, _menu.Handle);
+            AppIndicatorNative.app_indicator_set_secondary_activate_target(indicator, switchItem.Handle);
+            AppIndicatorNative.app_indicator_set_menu(indicator, _menu.Handle);
+
+            return indicator;
         }
 
         // ------------------------------------------------------
@@ -275,22 +247,14 @@ namespace DefaultAudioDeviceSwitcher.Linux
         {
             var iconName = _activeDevice switch
             {
-                DeviceKind.Headset => "dads-headset",
-                DeviceKind.Speaker => "dads-speaker",
-                _ => "dads-unknown"
-            };
-
-            var tooltip = _activeDevice switch
-            {
-                DeviceKind.Headset => "Current audio: Headset",
-                DeviceKind.Speaker => "Current audio: Speaker",
-                _ => "Current audio: Unknown"
+                DeviceKind.Headset => "headset",
+                DeviceKind.Speaker => "speaker",
+                _ => "question"
             };
 
             if (_indicator != IntPtr.Zero)
             {
                 AppIndicatorNative.app_indicator_set_icon(_indicator, iconName);
-                AppIndicatorNative.app_indicator_set_title(_indicator, tooltip);
             }
         }
 
@@ -395,8 +359,6 @@ namespace DefaultAudioDeviceSwitcher.Linux
                     Run("pactl", $"move-sink-input {id} {sink}", useSpawn: true);
             }
         }
-
-        private bool IsInsideFlatpak => File.Exists("/.flatpak-info");
 
         private string Run(string cmd, string args, bool useSpawn = false)
         {
