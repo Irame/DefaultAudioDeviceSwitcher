@@ -219,24 +219,20 @@ namespace DefaultAudioDeviceSwitcher.Linux
                 return;
             }
 
-            var sinks = GetSinks();
-            if (sinks?.Any(x => x.Name == sink) != true)
-            {
-                var sinkDesc = target switch
-                {
-                    DeviceKind.Headset => _settings.HeadsetDescription,
-                    DeviceKind.Speaker => _settings.SpeakerDescription,
-                    _ => null
-                };
-                
-                Notify.Send($"Device not found", $"Could not find {sinkDesc ?? sink}");
-                Console.WriteLine($"Sink {sink} not found");
-                return;
-            }
-
             Console.WriteLine($"Switching to {sink} ({target})");
 
-            SetDefaultSink(sink);
+            if (SetDefaultSink(sink))
+                return;
+            
+            var sinkDesc = target switch
+            {
+                DeviceKind.Headset => _settings.HeadsetDescription,
+                DeviceKind.Speaker => _settings.SpeakerDescription,
+                _ => null
+            };
+            
+            Notify.Send($"Device not found", $"Could not find {sinkDesc ?? sink}");
+            Console.WriteLine($"Sink {sink} not found");
         }
 
         // ------------------------------------------------------
@@ -317,6 +313,9 @@ namespace DefaultAudioDeviceSwitcher.Linux
             var sinks = new List<SinkInfo>();
 
             var cmdOutput = Run("pactl", "--format=json list cards");
+            if (cmdOutput == null)
+                return null;
+            
             var soundCards = JsonSerializer.Deserialize<List<SoundCard>>(cmdOutput);
 
             if (soundCards == null)
@@ -360,15 +359,20 @@ namespace DefaultAudioDeviceSwitcher.Linux
         private string? GetDefaultSink()
         {
             var infoStr = Run("pactl", "--format=json info");
+            if (infoStr == null) return null;
+
             var info  = JsonSerializer.Deserialize<Dictionary<string, object>>(infoStr);
             return info?.GetValueOrDefault("default_sink_name")?.ToString();
         }
 
-        private void SetDefaultSink(string sink)
+        private bool SetDefaultSink(string sink)
         {
-            var setSinkResult = Run("pactl", $"set-default-sink {sink}", useSpawn: true);
+            var result = Run("pactl", $"set-default-sink {sink}", useSpawn: true);
+            if (result == null) return false;
 
             var inputs = Run("pactl", "list short sink-inputs");
+            if (inputs == null) return true;
+
             foreach (var l in inputs.Split('\n'))
             {
                 var parts = l.Split('\t', StringSplitOptions.RemoveEmptyEntries);
@@ -377,9 +381,11 @@ namespace DefaultAudioDeviceSwitcher.Linux
                 if (int.TryParse(parts[0], out var id))
                     Run("pactl", $"move-sink-input {id} {sink}", useSpawn: true);
             }
+
+            return true;
         }
 
-        private string Run(string cmd, string args, bool useSpawn = false)
+        private string? Run(string cmd, string args, bool useSpawn = false)
         {
             string actualCmd, actualArgs;
 
@@ -408,12 +414,19 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
                 string result = p.StandardOutput.ReadToEnd();
                 p.WaitForExit(1000);
+
+                if (p.ExitCode != 0)
+                {
+                    string errorResult = p.StandardError.ReadToEnd();
+                    throw new Exception(errorResult);
+                }
+                
                 return result;
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error running {cmd}: {ex.Message}");
-                return "";
+                Console.Error.WriteLine($"Error running {cmd} {args}: {ex.Message}");
+                return null;
             }
         }
     }
