@@ -43,8 +43,7 @@ public static class Notify
         var n = notify_notification_new(summary, body, icon);
 
         // Hold a strong reference so the GC doesn't collect it before the callback fires
-        NotifyActionCallback callback = null!;
-        callback = (notif, action, data) =>
+        NotifyActionCallback callback = (notif, _, _) =>
         {
             onAction();
             g_object_unref(notif);

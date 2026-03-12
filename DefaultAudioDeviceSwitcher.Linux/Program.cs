@@ -1,8 +1,5 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 
 namespace DefaultAudioDeviceSwitcher.Linux
 {
@@ -14,8 +11,8 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
     internal class SinkInfo
     {
-        public required string Name { get; set; }
-        public required string Description { get; set; }
+        public required string Name { get; init; }
+        public required string Description { get; init; }
         public override string ToString() => string.IsNullOrEmpty(Description) ? Name : Description;
     }
 
@@ -90,7 +87,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
             var configFile = Path.Combine(configPath, "config.json");
             var settings = Settings.Load(configFile);
 
-            var ctx = new TrayAppContext(settings);
+            var _ = new TrayAppContext(settings);
 
             Gtk.Application.Run();
 
@@ -103,11 +100,9 @@ namespace DefaultAudioDeviceSwitcher.Linux
         private readonly Settings _settings;
         private DeviceKind? _activeDevice;
 
-        private Gtk.Menu _menu;
-        private Gtk.MenuItem _configItem;
-        private Gtk.MenuItem _exitItem;
+        private Gtk.Menu? _menu;
 
-        private CancellationTokenSource _pulseWatcherCts = new();
+        private readonly CancellationTokenSource _pulseWatcherCts = new();
 
         public DeviceKind? ActiveDevice
         {
@@ -119,7 +114,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
             }
         }
 
-        private IntPtr _indicator = IntPtr.Zero;
+        private readonly IntPtr _indicator;
 
         public TrayAppContext(Settings settings)
         {
@@ -150,16 +145,16 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
             // Add a "Switch" item for left-click equivalent
             var switchItem = new Gtk.MenuItem("Switch Audio Device");
-            switchItem.Activated += (s, e) => SwitchDevice();
+            switchItem.Activated += (_, _) => SwitchDevice();
             _menu.Append(switchItem);
 
-            _configItem = new Gtk.MenuItem("Config");
-            _configItem.Activated += (s, e) => ShowConfig();
-            _menu.Append(_configItem);
+            var configItem = new Gtk.MenuItem("Config");
+            configItem.Activated += (_, _) => ShowConfig();
+            _menu.Append(configItem);
 
-            _exitItem = new Gtk.MenuItem("Exit");
-            _exitItem.Activated += (s, e) => Exit();
-            _menu.Append(_exitItem);
+            var exitItem = new Gtk.MenuItem("Exit");
+            exitItem.Activated += (_, _) => Exit();
+            _menu.Append(exitItem);
 
             _menu.ShowAll();
 
@@ -435,8 +430,8 @@ namespace DefaultAudioDeviceSwitcher.Linux
     {
         private readonly Settings _settings;
         private readonly List<SinkInfo> _sinks;
-        private Gtk.ComboBox _headsetCombo;
-        private Gtk.ComboBox _speakerCombo;
+        private readonly Gtk.ComboBox _headsetCombo;
+        private readonly Gtk.ComboBox _speakerCombo;
 
         public ConfigWindow(Settings settings, List<SinkInfo> sinks)
             : base(Gtk.WindowType.Toplevel)
@@ -448,9 +443,9 @@ namespace DefaultAudioDeviceSwitcher.Linux
             DefaultWidth = 400;
             DefaultHeight = 200;
             WindowPosition = Gtk.WindowPosition.Center;
-            DeleteEvent += (o, args) => Destroy();
+            DeleteEvent += (_, _) => Destroy();
 
-            var vbox = new Gtk.VBox(false, 10) { MarginStart = 20, MarginEnd = 20, MarginTop = 20, MarginBottom = 20 };
+            var vbox = new Gtk.Box(Gtk.Orientation.Vertical, 10) { MarginStart = 20, MarginEnd = 20, MarginTop = 20, MarginBottom = 20 };
 
             // Headset label and combo
             var headsetLabel = new Gtk.Label("Headset:") { Xalign = 0 };
@@ -517,16 +512,16 @@ namespace DefaultAudioDeviceSwitcher.Linux
             vbox.PackStart(_speakerCombo, false, false, 0);
 
             // Buttons
-            var hbox = new Gtk.HBox(true, 10) { MarginTop = 20 };
+            var hBox = new Gtk.Box(Gtk.Orientation.Horizontal, 10) { MarginTop = 20 };
             var saveBtn = new Gtk.Button("Save");
             saveBtn.Clicked += OnSaveClicked;
-            hbox.PackStart(saveBtn, true, true, 0);
+            hBox.PackStart(saveBtn, true, true, 0);
 
             var cancelBtn = new Gtk.Button("Cancel");
-            cancelBtn.Clicked += (o, args) => Destroy();
-            hbox.PackStart(cancelBtn, true, true, 0);
+            cancelBtn.Clicked += (_, _) => Destroy();
+            hBox.PackStart(cancelBtn, true, true, 0);
 
-            vbox.PackStart(hbox, false, false, 0);
+            vbox.PackStart(hBox, false, false, 0);
 
             Add(vbox);
             ShowAll();
@@ -546,7 +541,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
                 _settings.HeadsetDescription = null;
             }
 
-            int speakerActive = _speakerCombo.Active;
+            var speakerActive = _speakerCombo.Active;
             if (speakerActive > 0 && speakerActive <= _sinks.Count)
             {
                 _settings.SpeakerName = _sinks[speakerActive - 1].Name;
