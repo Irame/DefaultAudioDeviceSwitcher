@@ -24,7 +24,10 @@ namespace DefaultAudioDeviceSwitcher.Linux
         private string _filePath = null!;
 
         public string? HeadsetName { get; set; }
+        public string? HeadsetDescription { get; set; }
+        
         public string? SpeakerName { get; set; }
+        public string? SpeakerDescription { get; set; }
 
         public static Settings Load(string filePath)
         {
@@ -171,7 +174,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
         // ------------------------------------------------------
         private void SwitchDevice()
         {
-            Console.WriteLine("Left-click: switching audio device");
+            Console.WriteLine("Switching audio device");
 
             if (_activeDevice == DeviceKind.Headset)
                 SwitchTo(DeviceKind.Speaker);
@@ -211,7 +214,23 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
             if (sink == null)
             {
+                Notify.SendWithAction($"{target} not configured", "Click to open settings", "Open Settings", ShowConfig);
                 Console.WriteLine("Sink missing in config");
+                return;
+            }
+
+            var sinks = GetSinks();
+            if (sinks?.Any(x => x.Name == sink) != true)
+            {
+                var sinkDesc = target switch
+                {
+                    DeviceKind.Headset => _settings.HeadsetDescription,
+                    DeviceKind.Speaker => _settings.SpeakerDescription,
+                    _ => null
+                };
+                
+                Notify.Send($"Device not found", $"Could not find {sinkDesc ?? sink}");
+                Console.WriteLine($"Sink {sink} not found");
                 return;
             }
 
@@ -347,7 +366,7 @@ namespace DefaultAudioDeviceSwitcher.Linux
 
         private void SetDefaultSink(string sink)
         {
-            Run("pactl", $"set-default-sink {sink}", useSpawn: true);
+            var setSinkResult = Run("pactl", $"set-default-sink {sink}", useSpawn: true);
 
             var inputs = Run("pactl", "list short sink-inputs");
             foreach (var l in inputs.Split('\n'))
@@ -506,20 +525,24 @@ namespace DefaultAudioDeviceSwitcher.Linux
             if (headsetActive > 0 && headsetActive <= _sinks.Count)
             {
                 _settings.HeadsetName = _sinks[headsetActive - 1].Name;
+                _settings.HeadsetDescription = _sinks[headsetActive - 1].Description;
             }
             else
             {
                 _settings.HeadsetName = null;
+                _settings.HeadsetDescription = null;
             }
 
             int speakerActive = _speakerCombo.Active;
             if (speakerActive > 0 && speakerActive <= _sinks.Count)
             {
                 _settings.SpeakerName = _sinks[speakerActive - 1].Name;
+                _settings.SpeakerDescription = _sinks[speakerActive - 1].Description;
             }
             else
             {
                 _settings.SpeakerName = null;
+                _settings.SpeakerDescription = null;
             }
 
             _settings.Save();
