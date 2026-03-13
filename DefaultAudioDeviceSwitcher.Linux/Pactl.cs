@@ -3,12 +3,25 @@ using System.Text.Json;
 
 namespace DefaultAudioDeviceSwitcher.Linux;
 
-internal class SinkInfo
+internal class ProfileInfo
 {
-    public required string Name { get; init; }
-    public required string Description { get; init; }
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    
     public override string ToString() => string.IsNullOrEmpty(Description) ? Name : Description;
 }
+
+internal class CardInfo
+{
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+
+    public List<ProfileInfo> Profiles = [];
+    
+    public override string ToString() => string.IsNullOrEmpty(Description) ? Name : Description;
+}
+
+internal record DefaultDeviceInfo(string CardName, string ProfileName);
 
 internal static class Pactl
 {
@@ -42,79 +55,102 @@ internal static class Pactl
             process.Kill();
         }, cancellationToken);
     }
-    
-    public static List<SinkInfo>? GetSinks()
+
+    public static List<CardInfo>? GetCards()
     {
-        var sinks = new List<SinkInfo>();
+        var cards = new List<CardInfo>();
 
-        var cmdOutput = Run("pactl", "--format=json list cards");
-        if (cmdOutput == null)
+        var soundCards = PactlListCards();
+        
+        if (soundCards is null)
             return null;
-            
-        var soundCards = JsonSerializer.Deserialize<List<SoundCard>>(cmdOutput);
-
-        if (soundCards == null)
-        {
-            Console.WriteLine("Could not parse pactl output");
-            return null;
-        }
 
         foreach (var soundCard in soundCards)
         {
-            if (!soundCard.Name.StartsWith("alsa_card."))
-                continue;
-
-            var deviceSlug = soundCard.Name["alsa_card.".Length..];
-            var deviceName = soundCard.Properties.GetValueOrDefault("device.nick")
-                             ?? soundCard.Properties.GetValueOrDefault("api.alsa.card.name");
-
-            HashSet<string> processedSinks = [];
-
-            foreach (var (profileName, profile) in soundCard.Profiles.OrderBy(x => x.Key.Contains("input:")))
+            var card = new CardInfo
             {
-                if (profile is { Available: true, Sinks: > 0 })
+                Name = soundCard.Name,
+                Description = soundCard.Properties.GetValueOrDefault("device.nick")
+                              ?? soundCard.Properties.GetValueOrDefault("api.alsa.card.name")
+            };
+
+            foreach (var (profileName, profile) in soundCard.Profiles)
+            {
+                if (profile is { Available: true })
                 {
-                    sinks.AddRange(profileName.Split('+')
-                        .Where(x => x.StartsWith("output:"))
-                        .Select(x => x["output:".Length..])
-                        .Select(output => $"alsa_output.{deviceSlug}.{output}")
-                        .Where(x => processedSinks.Add(x))
-                        .Select(sinkName => new SinkInfo
-                        {
-                            Name = sinkName,
-                            Description = $"{deviceName} - {profile.Description}"
-                        })) ;
+                    card.Profiles.Add(new ()
+                    {
+                        Name = profileName,
+                        Description = profile.Description
+                    });
                 }
             }
+
+            cards.Add(card);
         }
 
-        return sinks;
+        return cards;
+    }
+    
+    public static List<(string Sink, string Card, string Profile)>? GetSelectedProfiles()
+    {
+        var audioSinks = PactlListSinks();
+        var cards = PactlListCards();
+        if (cards == null)
+            return null;
+        
+        var cardProfiles = cards.ToDictionary(c => c.Name, c => c.ActiveProfile);
+        
+        return audioSinks?.Where(s => cardProfiles
+            .ContainsKey(s.Properties["device.name"]))
+            .Select(s => (s.Name, s.Properties["device.name"], cardProfiles[s.Properties["device.name"]]))
+            .ToList();
     }
 
-    public static string? GetDefaultSink()
+    public static DefaultDeviceInfo? GetDefaultCardProfile()
     {
-        var infoStr = Run("pactl", "--format=json info");
-        if (infoStr == null) return null;
+        var info = PactlInfo();
+        var sinkName = info?.GetValueOrDefault("default_sink_name")?.ToString();
+        
+        if (sinkName == null) return null;
 
-        var info  = JsonSerializer.Deserialize<Dictionary<string, object>>(infoStr);
-        return info?.GetValueOrDefault("default_sink_name")?.ToString();
+        var profiles = GetSelectedProfiles();
+
+        return profiles?
+            .Where(x => x.Sink == sinkName)
+            .Select(x => new DefaultDeviceInfo(x.Card, x.Profile))
+            .FirstOrDefault();
+    }
+
+    public static bool SetDefaultCardProfile(string cardName, string? profileName)
+    {
+        if (profileName != null)
+        {
+            PactlDoAction("set-card-profile", cardName, profileName);
+        }
+        
+        var profiles = GetSelectedProfiles();
+        var sinkName = profiles?.Where(x => x.Card == cardName).FirstOrDefault().Sink;
+
+        if (sinkName == null)
+        {
+            Console.Error.WriteLine($"Could not find sink for {cardName} - {profileName}");
+            return false;
+        }
+
+        return SetDefaultSink(sinkName);
     }
 
     public static bool SetDefaultSink(string sink)
     {
-        var result = Run("pactl", $"set-default-sink {sink}", useSpawn: true);
-        if (result == null) return false;
+        if (!PactlDoAction("set-default-sink", sink)) return false;
 
-        var inputs = Run("pactl", "list short sink-inputs");
-        if (inputs == null) return true;
+        var sinkInputs  = PactlShortSinkInputs();
+        if (sinkInputs == null) return false;
 
-        foreach (var l in inputs.Split('\n'))
+        foreach (var sinkInput in sinkInputs)
         {
-            var parts = l.Split('\t', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 0) continue;
-
-            if (int.TryParse(parts[0], out var id))
-                Run("pactl", $"move-sink-input {id} {sink}", useSpawn: true);
+            PactlDoAction("move-sink-input", sinkInput.Index.ToString(), sink);
         }
 
         return true;
@@ -163,5 +199,36 @@ internal static class Pactl
             Console.Error.WriteLine($"Error running {cmd} {args}: {ex.Message}");
             return null;
         }
+    }
+
+    private static Dictionary<string, object>? PactlInfo() => CallPactlAndParse<Dictionary<string, object>>("info");
+
+    private static List<AudioSink>? PactlListSinks() => CallPactlAndParse<List<AudioSink>>("list sinks");
+
+    private static List<ShortSinkInput>? PactlShortSinkInputs() => CallPactlAndParse<List<ShortSinkInput>>("list short sink-inputs");
+    
+    private static List<SoundCard>? PactlListCards() => CallPactlAndParse<List<SoundCard>>("list cards");
+
+    private static T? CallPactlAndParse<T>(string command)
+        where T : class
+    {
+        var cmdOutput = Run("pactl", $"--format=json {command}");
+        if (cmdOutput == null)
+        {
+            return null;
+        }
+
+        var parsedOutput = JsonSerializer.Deserialize<T>(cmdOutput);
+        if (parsedOutput == null)
+        {
+            Console.WriteLine($"Could not parse pactl output for params '{command}'");
+        }
+
+        return parsedOutput;
+    }
+
+    private static bool PactlDoAction(string action, params string[] args)
+    {
+        return Run("pactl", $"{action} {string.Join(" ", args)}", useSpawn: true) != null;
     }
 }

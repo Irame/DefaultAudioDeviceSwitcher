@@ -3,87 +3,64 @@ namespace DefaultAudioDeviceSwitcher.Linux;
 class ConfigWindow : Gtk.Window
 {
     private readonly Settings _settings;
-    private readonly List<SinkInfo> _sinks;
-    private readonly Gtk.ComboBox _headsetCombo;
-    private readonly Gtk.ComboBox _speakerCombo;
+    private readonly List<CardInfo> _cards;
+    private readonly Gtk.ComboBoxText _headsetCardCombo;
+    private readonly Gtk.ComboBoxText _headsetProfileCombo;
+    private readonly Gtk.ComboBoxText _speakerCardCombo;
+    private readonly Gtk.ComboBoxText _speakerProfileCombo;
 
-    public ConfigWindow(Settings settings, List<SinkInfo> sinks)
+    public ConfigWindow(Settings settings, List<CardInfo> cards)
         : base(Gtk.WindowType.Toplevel)
     {
         _settings = settings;
-        _sinks = sinks;
+        _cards = cards;
 
         Title = "Audio Device Configuration";
-        DefaultWidth = 400;
+        DefaultWidth = 500;
         DefaultHeight = 200;
         WindowPosition = Gtk.WindowPosition.Center;
         DeleteEvent += (_, _) => Destroy();
 
-        var vbox = new Gtk.Box(Gtk.Orientation.Vertical, 10) { MarginStart = 20, MarginEnd = 20, MarginTop = 20, MarginBottom = 20 };
+        var vbox = new Gtk.Box(Gtk.Orientation.Vertical, 10)
+            { MarginStart = 20, MarginEnd = 20, MarginTop = 20, MarginBottom = 20 };
 
         // Headset label and combo
         var headsetLabel = new Gtk.Label("Headset:") { Xalign = 0 };
         vbox.PackStart(headsetLabel, false, false, 0);
 
-        _headsetCombo = new Gtk.ComboBox();
-        var headsetStore = new Gtk.ListStore(typeof(string));
-        headsetStore.AppendValues("(Not configured)");
-        foreach (var sink in _sinks)
-        {
-            headsetStore.AppendValues(sink.ToString());
-        }
-        _headsetCombo.Model = headsetStore;
-        var headsetCell = new Gtk.CellRendererText();
-        _headsetCombo.PackStart(headsetCell, true);
-        _headsetCombo.AddAttribute(headsetCell, "text", 0);
+        var headsetComboContainer = new Gtk.Box(Gtk.Orientation.Horizontal, 10);
 
-        // Set active item for headset
-        int headsetIdx = 0;
-        if (!string.IsNullOrEmpty(_settings.HeadsetName))
-        {
-            for (int i = 0; i < _sinks.Count; i++)
-            {
-                if (_sinks[i].Name == _settings.HeadsetName)
-                {
-                    headsetIdx = i + 1;
-                    break;
-                }
-            }
-        }
-        _headsetCombo.Active = headsetIdx;
-        vbox.PackStart(_headsetCombo, false, false, 0);
+        _headsetCardCombo = new Gtk.ComboBoxText();
+        UpdateComboItems(_headsetCardCombo, _cards, c => c.Name, c => c.ToString(), "(Not configured)");
+        _headsetCardCombo.ActiveId = _settings.Headset.Card?.Name ?? "";
+        _headsetCardCombo.Changed += CardChanged;
+        headsetComboContainer.PackStart(_headsetCardCombo, true, true, 0);
+
+        _headsetProfileCombo = new Gtk.ComboBoxText();
+        UpdateProfiles(_headsetCardCombo, _headsetProfileCombo);
+        _headsetProfileCombo.ActiveId = _settings.Headset.Profile?.Name ?? "";
+        headsetComboContainer.PackStart(_headsetProfileCombo, true, true, 0);
+
+        vbox.PackStart(headsetComboContainer, false, false, 0);
 
         // Speaker label and combo
         var speakerLabel = new Gtk.Label("Speaker:") { Xalign = 0 };
         vbox.PackStart(speakerLabel, false, false, 0);
 
-        _speakerCombo = new Gtk.ComboBox();
-        var speakerStore = new Gtk.ListStore(typeof(string));
-        speakerStore.AppendValues("(Not configured)");
-        foreach (var sink in _sinks)
-        {
-            speakerStore.AppendValues(sink.ToString());
-        }
-        _speakerCombo.Model = speakerStore;
-        var speakerCell = new Gtk.CellRendererText();
-        _speakerCombo.PackStart(speakerCell, true);
-        _speakerCombo.AddAttribute(speakerCell, "text", 0);
+        var speakerComboContainer = new Gtk.Box(Gtk.Orientation.Horizontal, 10);
 
-        // Set active item for speaker
-        int speakerIdx = 0;
-        if (!string.IsNullOrEmpty(_settings.SpeakerName))
-        {
-            for (int i = 0; i < _sinks.Count; i++)
-            {
-                if (_sinks[i].Name == _settings.SpeakerName)
-                {
-                    speakerIdx = i + 1;
-                    break;
-                }
-            }
-        }
-        _speakerCombo.Active = speakerIdx;
-        vbox.PackStart(_speakerCombo, false, false, 0);
+        _speakerCardCombo = new Gtk.ComboBoxText();
+        UpdateComboItems(_speakerCardCombo, _cards, c => c.Name, c => c.ToString(), "(Not configured)");
+        _speakerCardCombo.ActiveId = _settings.Speaker.Card?.Name ?? "";
+        _speakerCardCombo.Changed += CardChanged;
+        speakerComboContainer.PackStart(_speakerCardCombo, true, true, 0);
+
+        _speakerProfileCombo = new Gtk.ComboBoxText();
+        UpdateProfiles(_speakerCardCombo, _speakerProfileCombo);
+        _speakerProfileCombo.ActiveId = _settings.Speaker.Profile?.Name ?? "";
+        speakerComboContainer.PackStart(_speakerProfileCombo, true, true, 0);
+
+        vbox.PackStart(speakerComboContainer, false, false, 0);
 
         // Buttons
         var hBox = new Gtk.Box(Gtk.Orientation.Horizontal, 10) { MarginTop = 20 };
@@ -101,31 +78,83 @@ class ConfigWindow : Gtk.Window
         ShowAll();
     }
 
+    public override void Destroy()
+    {
+        _headsetCardCombo.Changed -= CardChanged;
+        _speakerCardCombo.Changed -= CardChanged;
+
+        base.Destroy();
+    }
+
+    private void CardChanged(object? sender, EventArgs args)
+    {
+        if (sender == _headsetCardCombo)
+        {
+            UpdateProfiles(_headsetCardCombo, _headsetProfileCombo);
+            _headsetProfileCombo.ActiveId = _settings.Headset.Profile?.Name ?? "";
+            _speakerProfileCombo.ActiveId ??= "";
+        }
+        else if (sender == _speakerCardCombo)
+        {
+            UpdateProfiles(_speakerCardCombo, _speakerProfileCombo);
+            _speakerProfileCombo.ActiveId = _settings.Speaker.Profile?.Name ?? "";
+            _speakerProfileCombo.ActiveId ??= "";
+        }
+    }
+
+    public void UpdateProfiles(Gtk.ComboBoxText cardCombo, Gtk.ComboBoxText profileCombo)
+    {
+        profileCombo.RemoveAll();
+
+        var card = _cards.FirstOrDefault(x => x.Name == cardCombo.ActiveId);
+        if (card is null) return;
+
+        UpdateComboItems(profileCombo, card.Profiles, p => p.Name, p => p.ToString(), "(Use default)");
+    }
+
+    public static void UpdateComboItems<T>(Gtk.ComboBoxText combo, List<T> items, Func<T, string> keySelector,
+        Func<T, string> valueSelector, string? nullValue = null)
+    {
+        if (nullValue != null)
+            combo.Append("", nullValue);
+
+        foreach (var item in items)
+            combo.Append(keySelector(item), valueSelector(item));
+    }
+
+    public static Gtk.ComboBoxText CreateCombo<T>(List<T> items, Func<T, string> keySelector,
+        Func<T, string> valueSelector, string? selectedKey, string? nullValue)
+    {
+        var combo = new Gtk.ComboBoxText();
+
+        if (nullValue != null)
+            combo.Append(null, nullValue);
+
+        foreach (var item in items)
+            combo.Append(keySelector(item), valueSelector(item));
+
+        combo.ActiveId = selectedKey;
+
+        return combo;
+    }
+
     private void OnSaveClicked(object? sender, EventArgs e)
     {
-        int headsetActive = _headsetCombo.Active;
-        if (headsetActive > 0 && headsetActive <= _sinks.Count)
-        {
-            _settings.HeadsetName = _sinks[headsetActive - 1].Name;
-            _settings.HeadsetDescription = _sinks[headsetActive - 1].Description;
-        }
-        else
-        {
-            _settings.HeadsetName = null;
-            _settings.HeadsetDescription = null;
-        }
+        _settings.Headset.Card = string.IsNullOrEmpty(_headsetCardCombo.ActiveId)
+            ? null
+            : new NameDescSetting { Name = _headsetCardCombo.ActiveId, Description = _headsetCardCombo.ActiveText };
+        
+        _settings.Headset.Profile = string.IsNullOrEmpty(_headsetProfileCombo.ActiveId)
+            ? null
+            : new NameDescSetting { Name = _headsetProfileCombo.ActiveId, Description = _headsetProfileCombo.ActiveText };
 
-        var speakerActive = _speakerCombo.Active;
-        if (speakerActive > 0 && speakerActive <= _sinks.Count)
-        {
-            _settings.SpeakerName = _sinks[speakerActive - 1].Name;
-            _settings.SpeakerDescription = _sinks[speakerActive - 1].Description;
-        }
-        else
-        {
-            _settings.SpeakerName = null;
-            _settings.SpeakerDescription = null;
-        }
+        _settings.Speaker.Card = string.IsNullOrEmpty(_speakerCardCombo.ActiveId)
+            ? null
+            : new NameDescSetting { Name = _speakerCardCombo.ActiveId, Description = _speakerCardCombo.ActiveText };
+        
+        _settings.Speaker.Profile = string.IsNullOrEmpty(_speakerProfileCombo.ActiveId)
+            ? null
+            : new NameDescSetting { Name = _speakerProfileCombo.ActiveId, Description = _speakerProfileCombo.ActiveText };
 
         _settings.Save();
         Destroy();

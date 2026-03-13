@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using System.Text.Json;
-
 namespace DefaultAudioDeviceSwitcher.Linux;
 
 public enum DeviceKind
@@ -32,7 +29,7 @@ class TrayAppContext
     public TrayAppContext(Settings settings)
     {
         _settings = settings;
-        _settings.OnSave += DetectCurrentDevice; 
+        _settings.OnSave += SettingsSaved; 
 
         _indicator = CreateTrayIcon();
 
@@ -76,6 +73,14 @@ class TrayAppContext
         return indicator;
     }
 
+    private void SettingsSaved()
+    {
+        if (ActiveDevice == null)
+            DetectCurrentDevice();
+        else if (!SwitchTo(ActiveDevice.Value))
+            ActiveDevice = null;
+    }
+
     private void SwitchDevice()
     {
         Console.WriteLine("Switching audio device");
@@ -90,11 +95,11 @@ class TrayAppContext
 
     private void ShowConfig()
     {
-        var sinks = Pactl.GetSinks();
-        if (sinks == null)
+        var cards = Pactl.GetCards();
+        if (cards == null)
             return;
 
-        var window = new ConfigWindow(_settings, sinks);
+        var window = new ConfigWindow(_settings, cards);
         window.Show();
     }
 
@@ -104,50 +109,44 @@ class TrayAppContext
         Gtk.Application.Quit();
     }
 
-    private void SwitchTo(DeviceKind target)
+    private bool SwitchTo(DeviceKind target)
     {
-        var sink = target switch
+        var settings = target switch
         {
-            DeviceKind.Headset => _settings.HeadsetName,
-            DeviceKind.Speaker => _settings.SpeakerName,
+            DeviceKind.Headset => _settings.Headset,
+            DeviceKind.Speaker => _settings.Speaker,
             _ => null
         };
 
-        if (sink == null)
+        if (settings?.Card?.Name == null)
         {
             Notify.SendWithAction($"{target} not configured", "Click to open settings", "Open Settings", ShowConfig);
             Console.WriteLine("Sink missing in config");
-            return;
+            return false;
         }
 
-        Console.WriteLine($"Switching to {sink} ({target})");
+        Console.WriteLine($"Switching to {settings.Card.Name} - {settings.Profile?.Name ?? "(default profile)"} ({target})");
 
-        if (Pactl.SetDefaultSink(sink))
-            return;
+        if (Pactl.SetDefaultCardProfile(settings.Card.Name, settings.Profile?.Name))
+            return true;
             
-        var sinkDesc = target switch
-        {
-            DeviceKind.Headset => _settings.HeadsetDescription,
-            DeviceKind.Speaker => _settings.SpeakerDescription,
-            _ => null
-        };
-            
-        Notify.Send($"Device not found", $"Could not find {sinkDesc ?? sink}");
-        Console.WriteLine($"Sink {sink} not found");
+        Notify.Send($"Device not found", $"Could not find {settings.Card.Description} - {settings.Profile?.Description ?? "(default profile)"}");
+        Console.Error.WriteLine($"Sink {settings.Card.Name} - {settings.Profile?.Name ?? "(default profile)"} not found");
+        return false;
     }
 
     private void DetectCurrentDevice()
     {
-        var defaultSink = Pactl.GetDefaultSink();
-        if (defaultSink == null)
+        var defInfo = Pactl.GetDefaultCardProfile();
+        if (defInfo == null)
         {
             ActiveDevice = null;
             return;
         }
 
-        if (defaultSink == _settings.HeadsetName)
+        if (defInfo.CardName == _settings.Headset.Card?.Name && (defInfo.ProfileName == _settings.Headset.Profile?.Name || _settings.Headset.Profile?.Name == null))
             ActiveDevice = DeviceKind.Headset;
-        else if (defaultSink == _settings.SpeakerName)
+        else if (defInfo.CardName == _settings.Speaker.Card?.Name && (defInfo.ProfileName == _settings.Speaker.Profile?.Name || _settings.Speaker.Profile?.Name == null))
             ActiveDevice = DeviceKind.Speaker;
         else
             ActiveDevice = null;
