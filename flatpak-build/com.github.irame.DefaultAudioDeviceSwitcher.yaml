@@ -25,6 +25,8 @@ finish-args:
   - --filesystem=/usr/bin/pactl:ro
   # flatpak-spawn --host
   - --talk-name=org.freedesktop.Flatpak
+  # for picking up the system theme
+  - --filesystem=xdg-config/gtk-3.0:ro
   - --env=DOTNET_ROOT=/app/lib/dotnet
 
 modules:
