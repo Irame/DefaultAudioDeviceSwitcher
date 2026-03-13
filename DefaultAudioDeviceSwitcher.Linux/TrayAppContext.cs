@@ -32,6 +32,7 @@ class TrayAppContext
     public TrayAppContext(Settings settings)
     {
         _settings = settings;
+        _settings.OnSave += DetectCurrentDevice; 
 
         _indicator = CreateTrayIcon();
 

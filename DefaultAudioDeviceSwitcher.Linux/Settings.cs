@@ -28,5 +28,8 @@ internal class Settings
     {
         var json = JsonSerializer.Serialize(this);
         File.WriteAllText(_filePath, json);
+        OnSave?.Invoke();
     }
+    
+    public event Action? OnSave;
 }
