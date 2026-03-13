@@ -12,6 +12,7 @@ build-options:
 command: DefaultAudioDeviceSwitcher.Linux
 
 finish-args:
+  - --env=DOTNET_ROOT=/app/lib/dotnet
   # Support both X11 (fallback) and Wayland
   - --socket=fallback-x11
   - --socket=wayland
@@ -25,7 +26,6 @@ finish-args:
   - --talk-name=org.freedesktop.Flatpak
   # for picking up the system theme
   - --filesystem=xdg-config/gtk-3.0:ro
-  - --env=DOTNET_ROOT=/app/lib/dotnet
 
 modules:
   - shared-modules/libappindicator/libappindicator-gtk3-12.10.json
