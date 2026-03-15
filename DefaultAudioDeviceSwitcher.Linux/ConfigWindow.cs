@@ -1,16 +1,18 @@
+using Gtk;
+
 namespace DefaultAudioDeviceSwitcher.Linux;
 
-class ConfigWindow : Gtk.Window
+class ConfigWindow : Window
 {
     private readonly Settings _settings;
     private readonly List<CardInfo> _cards;
-    private readonly Gtk.ComboBoxText _headsetCardCombo;
-    private readonly Gtk.ComboBoxText _headsetProfileCombo;
-    private readonly Gtk.ComboBoxText _speakerCardCombo;
-    private readonly Gtk.ComboBoxText _speakerProfileCombo;
+    private readonly ComboBoxText _headsetCardCombo;
+    private readonly ComboBoxText _headsetProfileCombo;
+    private readonly ComboBoxText _speakerCardCombo;
+    private readonly ComboBoxText _speakerProfileCombo;
 
     public ConfigWindow(Settings settings, List<CardInfo> cards)
-        : base(Gtk.WindowType.Toplevel)
+        : base(WindowType.Toplevel)
     {
         _settings = settings;
         _cards = cards;
@@ -20,64 +22,60 @@ class ConfigWindow : Gtk.Window
         Title = "Audio Device Configuration";
         DefaultWidth = 500;
         DefaultHeight = 200;
-        WindowPosition = Gtk.WindowPosition.Center;
+        WindowPosition = WindowPosition.Center;
         DeleteEvent += (_, _) => Destroy();
 
-        var vbox = new Gtk.Box(Gtk.Orientation.Vertical, 10)
+        var vbox = new Box(Orientation.Vertical, 10)
             { MarginStart = 20, MarginEnd = 20, MarginTop = 20, MarginBottom = 20 };
 
         // Headset label and combo
-        var headsetLabel = new Gtk.Label("Headset:") { Xalign = 0 };
-        vbox.PackStart(headsetLabel, false, false, 0);
-
-        var headsetComboContainer = new Gtk.Box(Gtk.Orientation.Horizontal, 10);
-
-        _headsetCardCombo = new Gtk.ComboBoxText();
-        UpdateComboItems(_headsetCardCombo, _cards, c => c.Name, c => c.ToString(), "(Not configured)");
-        _headsetCardCombo.ActiveId = _settings.Headset.Card?.Name ?? "";
-        _headsetCardCombo.Changed += CardChanged;
-        headsetComboContainer.PackStart(_headsetCardCombo, true, true, 0);
-
-        _headsetProfileCombo = new Gtk.ComboBoxText();
-        UpdateProfiles(_headsetCardCombo, _headsetProfileCombo);
-        _headsetProfileCombo.ActiveId = _settings.Headset.Profile?.Name ?? "";
-        headsetComboContainer.PackStart(_headsetProfileCombo, true, true, 0);
-
-        vbox.PackStart(headsetComboContainer, false, false, 0);
+        (_headsetCardCombo, _headsetProfileCombo) = CreatDeviceSection(vbox, "Headset", _settings.Headset);
 
         // Speaker label and combo
-        var speakerLabel = new Gtk.Label("Speaker:") { Xalign = 0 };
-        vbox.PackStart(speakerLabel, false, false, 0);
-
-        var speakerComboContainer = new Gtk.Box(Gtk.Orientation.Horizontal, 10);
-
-        _speakerCardCombo = new Gtk.ComboBoxText();
-        UpdateComboItems(_speakerCardCombo, _cards, c => c.Name, c => c.ToString(), "(Not configured)");
-        _speakerCardCombo.ActiveId = _settings.Speaker.Card?.Name ?? "";
-        _speakerCardCombo.Changed += CardChanged;
-        speakerComboContainer.PackStart(_speakerCardCombo, true, true, 0);
-
-        _speakerProfileCombo = new Gtk.ComboBoxText();
-        UpdateProfiles(_speakerCardCombo, _speakerProfileCombo);
-        _speakerProfileCombo.ActiveId = _settings.Speaker.Profile?.Name ?? "";
-        speakerComboContainer.PackStart(_speakerProfileCombo, true, true, 0);
-
-        vbox.PackStart(speakerComboContainer, false, false, 0);
+        (_speakerCardCombo, _speakerProfileCombo) = CreatDeviceSection(vbox, "Speaker", _settings.Speaker);
 
         // Buttons
-        var hBox = new Gtk.Box(Gtk.Orientation.Horizontal, 10) { MarginTop = 20 };
-        var saveBtn = new Gtk.Button("Save");
+        CreateButtons(vbox);
+
+        Add(vbox);
+        ShowAll();
+    }
+
+    private (ComboBoxText CardCombo, ComboBoxText ProfileCombo) CreatDeviceSection(Box vbox, string title, SinkSettings settings)
+    {
+        var label = new Label($"{title}:") { Xalign = 0 };
+        vbox.PackStart(label, false, false, 0);
+
+        var comboContainer = new Box(Orientation.Horizontal, 10);
+
+        var cardCombo = new ComboBoxText();
+        UpdateComboItems(cardCombo, _cards, c => c.Name, c => c.ToString(), "(Not configured)");
+        cardCombo.ActiveId = settings.Card?.Name ?? "";
+        cardCombo.Changed += CardChanged;
+        comboContainer.PackStart(cardCombo, true, true, 0);
+
+        var profileCombo = new ComboBoxText();
+        UpdateProfiles(cardCombo, profileCombo);
+        profileCombo.ActiveId = settings.Profile?.Name ?? "";
+        comboContainer.PackStart(profileCombo, true, true, 0);
+
+        vbox.PackStart(comboContainer, false, false, 0);
+
+        return (cardCombo, profileCombo);
+    }
+
+    private void CreateButtons(Box vbox)
+    {
+        var hBox = new Box(Orientation.Horizontal, 10) { MarginTop = 20 };
+        var saveBtn = new Button("Save");
         saveBtn.Clicked += OnSaveClicked;
         hBox.PackStart(saveBtn, true, true, 0);
 
-        var cancelBtn = new Gtk.Button("Cancel");
+        var cancelBtn = new Button("Cancel");
         cancelBtn.Clicked += (_, _) => Destroy();
         hBox.PackStart(cancelBtn, true, true, 0);
 
         vbox.PackStart(hBox, false, false, 0);
-
-        Add(vbox);
-        ShowAll();
     }
 
     public override void Destroy()
@@ -92,7 +90,7 @@ class ConfigWindow : Gtk.Window
     {
         StyleContext.AddClass("dads-config-window");
         
-        var cssProvider = new Gtk.CssProvider();
+        var cssProvider = new CssProvider();
         cssProvider.LoadFromData(
             """
             .dads-config-window combobox button {
@@ -102,10 +100,10 @@ class ConfigWindow : Gtk.Window
             }
             """);
 
-        Gtk.StyleContext.AddProviderForScreen(
+        StyleContext.AddProviderForScreen(
             Gdk.Screen.Default,
             cssProvider,
-            Gtk.StyleProviderPriority.Application
+            StyleProviderPriority.Application
         );
     }
 
@@ -125,7 +123,7 @@ class ConfigWindow : Gtk.Window
         }
     }
 
-    private void UpdateProfiles(Gtk.ComboBoxText cardCombo, Gtk.ComboBoxText profileCombo)
+    private void UpdateProfiles(ComboBoxText cardCombo, ComboBoxText profileCombo)
     {
         profileCombo.RemoveAll();
 
@@ -135,7 +133,7 @@ class ConfigWindow : Gtk.Window
         UpdateComboItems(profileCombo, card.Profiles, p => p.Name, p => p.ToString(), "(Use default)");
     }
 
-    private static void UpdateComboItems<T>(Gtk.ComboBoxText combo, List<T> items, Func<T, string> keySelector,
+    private static void UpdateComboItems<T>(ComboBoxText combo, List<T> items, Func<T, string> keySelector,
         Func<T, string> valueSelector, string? nullValue = null)
     {
         if (nullValue != null)
@@ -145,10 +143,10 @@ class ConfigWindow : Gtk.Window
             combo.Append(keySelector(item), valueSelector(item));
     }
 
-    public static Gtk.ComboBoxText CreateCombo<T>(List<T> items, Func<T, string> keySelector,
+    public static ComboBoxText CreateCombo<T>(List<T> items, Func<T, string> keySelector,
         Func<T, string> valueSelector, string? selectedKey, string? nullValue)
     {
-        var combo = new Gtk.ComboBoxText();
+        var combo = new ComboBoxText();
 
         if (nullValue != null)
             combo.Append(null, nullValue);
