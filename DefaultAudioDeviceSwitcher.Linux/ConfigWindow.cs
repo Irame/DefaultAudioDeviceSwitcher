@@ -15,6 +15,8 @@ class ConfigWindow : Gtk.Window
         _settings = settings;
         _cards = cards;
 
+        SetStyle();
+
         Title = "Audio Device Configuration";
         DefaultWidth = 500;
         DefaultHeight = 200;
@@ -86,6 +88,27 @@ class ConfigWindow : Gtk.Window
         base.Destroy();
     }
 
+    private void SetStyle()
+    {
+        StyleContext.AddClass("dads-config-window");
+        
+        var cssProvider = new Gtk.CssProvider();
+        cssProvider.LoadFromData(
+            """
+            .dads-config-window combobox button {
+                min-height: 24px;
+                padding-top: 3px;
+                padding-bottom: 3px;
+            }
+            """);
+
+        Gtk.StyleContext.AddProviderForScreen(
+            Gdk.Screen.Default,
+            cssProvider,
+            Gtk.StyleProviderPriority.Application
+        );
+    }
+
     private void CardChanged(object? sender, EventArgs args)
     {
         if (sender == _headsetCardCombo)
@@ -102,7 +125,7 @@ class ConfigWindow : Gtk.Window
         }
     }
 
-    public void UpdateProfiles(Gtk.ComboBoxText cardCombo, Gtk.ComboBoxText profileCombo)
+    private void UpdateProfiles(Gtk.ComboBoxText cardCombo, Gtk.ComboBoxText profileCombo)
     {
         profileCombo.RemoveAll();
 
@@ -112,7 +135,7 @@ class ConfigWindow : Gtk.Window
         UpdateComboItems(profileCombo, card.Profiles, p => p.Name, p => p.ToString(), "(Use default)");
     }
 
-    public static void UpdateComboItems<T>(Gtk.ComboBoxText combo, List<T> items, Func<T, string> keySelector,
+    private static void UpdateComboItems<T>(Gtk.ComboBoxText combo, List<T> items, Func<T, string> keySelector,
         Func<T, string> valueSelector, string? nullValue = null)
     {
         if (nullValue != null)
