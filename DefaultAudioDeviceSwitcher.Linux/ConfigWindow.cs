@@ -55,7 +55,7 @@ class ConfigWindow : Window
         comboContainer.PackStart(cardCombo, true, true, 0);
 
         var profileCombo = new ComboBoxText();
-        UpdateProfiles(cardCombo, profileCombo);
+        UpdateProfiles(profileCombo, cardCombo.ActiveId);
         profileCombo.ActiveId = settings.Profile?.Name ?? "";
         comboContainer.PackStart(profileCombo, true, true, 0);
 
@@ -111,23 +111,23 @@ class ConfigWindow : Window
     {
         if (sender == _headsetCardCombo)
         {
-            UpdateProfiles(_headsetCardCombo, _headsetProfileCombo);
+            UpdateProfiles(_headsetProfileCombo, _headsetCardCombo.ActiveId);
             _headsetProfileCombo.ActiveId = _settings.Headset.Profile?.Name ?? "";
             _speakerProfileCombo.ActiveId ??= "";
         }
         else if (sender == _speakerCardCombo)
         {
-            UpdateProfiles(_speakerCardCombo, _speakerProfileCombo);
+            UpdateProfiles(_speakerProfileCombo, _speakerCardCombo.ActiveId);
             _speakerProfileCombo.ActiveId = _settings.Speaker.Profile?.Name ?? "";
             _speakerProfileCombo.ActiveId ??= "";
         }
     }
 
-    private void UpdateProfiles(ComboBoxText cardCombo, ComboBoxText profileCombo)
+    private void UpdateProfiles(ComboBoxText profileCombo, string? cardName)
     {
         profileCombo.RemoveAll();
 
-        var card = _cards.FirstOrDefault(x => x.Name == cardCombo.ActiveId);
+        var card = _cards.FirstOrDefault(x => x.Name == cardName);
         if (card is null) return;
 
         UpdateComboItems(profileCombo, card.Profiles, p => p.Name, p => p.ToString(), "(Use default)");
